@@ -1,0 +1,26 @@
+server:
+  port: ":8080"
+  mode: "debug" # debug, release, test
+
+database:
+  mysql:
+    host: "127.0.0.1"
+    port: 3306
+    user: "root"
+    password: "your_password"
+    dbname: "easyfind"
+    charset: "utf8mb4"
+    parse_time: true
+    loc: "Local"
+  redis:
+    host: "127.0.0.1"
+    port: 6379
+    password: ""
+    db: 0
+
+jwt:
+  secret: "your_jwt_secret"
+  expiration_hours: 24
+
+app:
+  file_upload_path: "./uploads"
