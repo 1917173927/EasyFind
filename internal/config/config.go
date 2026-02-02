@@ -55,7 +55,7 @@ var AppConfigData Config
 func InitConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config") // look for config in the working directory
+	viper.AddConfigPath("./config") // 配置文件路径
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)

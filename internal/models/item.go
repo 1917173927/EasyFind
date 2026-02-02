@@ -30,7 +30,7 @@ type Item struct {
 	Location     string     `json:"location"`
 	Time         time.Time  `json:"time"`
 	Description  string     `json:"description"`
-	Photos       string     `json:"photos"` // JSON string or comma-separated URLs
+	Photos       string     `json:"photos"` // 照片
 	ContactName  string     `json:"contact_name"`
 	ContactPhone string     `json:"contact_phone"`
 	IsBounty     bool       `json:"is_bounty"`
@@ -51,6 +51,6 @@ type Claim struct {
 	Item       Item   `gorm:"foreignKey:ItemID" json:"item"`
 	ClaimantID uint   `gorm:"not null" json:"claimant_id"`
 	Claimant   User   `gorm:"foreignKey:ClaimantID" json:"claimant"`
-	Status     string `gorm:"default:'pending'" json:"status"` // pending, approved, rejected
+	Status     string `gorm:"default:'pending'" json:"status"` // 状态: pending/approved/rejected
 	Proof      string `json:"proof"`
 }

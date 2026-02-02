@@ -31,6 +31,6 @@ func InitMySQL() {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// Optional: AutoMigrate if models are ready
+	// 可选: 自动迁移模型
 	// DB.AutoMigrate(&models.User{}, &models.Item{})
 }
