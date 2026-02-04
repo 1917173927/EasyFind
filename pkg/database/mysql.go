@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"easyfind/internal/config"
+	"easyfind/internal/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -32,5 +33,5 @@ func InitMySQL() {
 	}
 
 	// 可选: 自动迁移模型
-	// DB.AutoMigrate(&models.User{}, &models.Item{})
+	DB.AutoMigrate(&models.User{}, &models.Item{}, &models.Claim{})
 }

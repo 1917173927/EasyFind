@@ -6,20 +6,23 @@ import (
 	"easyfind/internal/api"
 	"easyfind/internal/config"
 	"easyfind/pkg/database"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 1. Init Config
+	// 初始化配置
 	config.InitConfig()
 
-	// 2. Init Database
+	// 数据库初始化
 	database.InitMySQL()
 	database.InitRedis()
 
-	// 3. Setup Router
-	r := api.SetupRouter()
+	// 路由初始化
+	r := gin.Default()
+	api.Init(r)
 
-	// 4. Run Server
+	// 服务启动
 	port := config.AppConfigData.Server.Port
 	log.Printf("Starting server on port %s", port)
 	if err := r.Run(port); err != nil {
