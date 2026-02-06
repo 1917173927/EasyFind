@@ -4,21 +4,26 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRole string
+type UserRole int
 
 const (
-	RoleStudentTeacher UserRole = "student_teacher"
-	RoleLFAdmin        UserRole = "lf_admin"
-	RoleSysAdmin       UserRole = "sys_admin"
+	RoleStudentTeacher UserRole = 1
+	RoleLFAdmin        UserRole = 2
+	RoleSysAdmin       UserRole = 3
 )
 
-type User struct {
+type Account struct {
 	gorm.Model
-	Username   string   `gorm:"uniqueIndex;not null" json:"username"`                                                        // 学号或工号
-	Password   string   `gorm:"not null" json:"-"`                                                                           // 密码
-	Role       UserRole `gorm:"type:enum('student_teacher', 'lf_admin', 'sys_admin');default:'student_teacher'" json:"role"` // 角色
-	Name       string   `json:"name"`                                                                                        // 姓名
-	Phone      string   `json:"phone"`                                                                                       // 电话号码
-	IsActive   bool     `gorm:"default:true" json:"is_active"`                                                               // 账号是否启用
-	FirstLogin bool     `gorm:"default:true" json:"first_login"`                                                             // 是否首次登录
+	Username   string   `gorm:"type:varchar(191);uniqueIndex;not null" json:"username"` // 学号或工号
+	Password   string   `gorm:"not null" json:"-"`
+	Role       UserRole `gorm:"default:1" json:"role"` // 1:学生/老师, 2:失物招领管理员, 3:系统管理员
+	Name       string   `json:"name"`
+	Phone      string   `json:"phone"`
+	IsActive   bool     `gorm:"default:true" json:"is_active"`
+	FirstLogin bool     `gorm:"default:true" json:"first_login"` // 是否首次登录
+}
+
+// TableName overrides the table name used by User to `profiles`
+func (Account) TableName() string {
+	return "accounts"
 }

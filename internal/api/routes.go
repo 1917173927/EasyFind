@@ -4,7 +4,11 @@ import (
 	"easyfind/internal/controllers"
 	"easyfind/internal/middleware"
 
+	_ "easyfind/docs"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Init(r *gin.Engine) {
@@ -13,11 +17,16 @@ func Init(r *gin.Engine) {
 	// 静态文件服务
 	r.Static("/uploads", "./uploads")
 
+	// Swagger 文档路由访问 http://localhost:8080/swagger/index.html 即可查看文档
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	
+
 	// 全局前缀
 	api := r.Group("/api/v1")
 	{
 		// 公开接口 (无需 JWT)
 		api.POST("/login", controllers.Login)
+		api.POST("/register", controllers.Register) // 临时注册接口
 
 		// 需要 JWT 认证的接口
 		auth := api.Group("")

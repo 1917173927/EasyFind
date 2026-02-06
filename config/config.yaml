@@ -24,3 +24,7 @@ jwt:
 
 app:
   file_upload_path: "./uploads"
+  roles:
+    student_teacher: 1
+    lf_admin: 2
+    sys_admin: 3

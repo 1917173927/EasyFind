@@ -33,5 +33,5 @@ func InitMySQL() {
 	}
 
 	// 可选: 自动迁移模型
-	DB.AutoMigrate(&models.User{}, &models.Item{}, &models.Claim{})
+	DB.AutoMigrate(&models.Account{}, &models.Item{}, &models.Claim{})
 }

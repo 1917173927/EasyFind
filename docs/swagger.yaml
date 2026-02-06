@@ -1,0 +1,102 @@
+definitions:
+  controllers.LoginRequest:
+    properties:
+      password:
+        type: string
+      remember:
+        description: 记住我
+        type: boolean
+      role:
+        description: 1:学生/老师, 2:失物招领管理员, 3:系统管理员
+        type: integer
+      username:
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+  controllers.LoginResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  controllers.RegisterRequest:
+    properties:
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        type: integer
+      username:
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录接口，支持学生/老师、失物招领管理员、系统管理员
+      parameters:
+      - description: 登录请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.LoginResponse'
+        "401":
+          description: 认证失败
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 用户登录
+      tags:
+      - Auth
+  /api/v1/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册新账号，用于测试不同身份
+      parameters:
+      - description: 注册请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注册成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 注册账号 (测试用)
+      tags:
+      - Auth
+swagger: "2.0"

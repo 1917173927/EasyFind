@@ -47,7 +47,14 @@ type JWTConfig struct {
 }
 
 type AppConfig struct {
-	FileUploadPath string `mapstructure:"file_upload_path"`
+	FileUploadPath string      `mapstructure:"file_upload_path"`
+	Roles          RolesConfig `mapstructure:"roles"`
+}
+
+type RolesConfig struct {
+	StudentTeacher int `mapstructure:"student_teacher"`
+	LFAdmin        int `mapstructure:"lf_admin"`
+	SysAdmin       int `mapstructure:"sys_admin"`
 }
 
 var AppConfigData Config
@@ -55,7 +62,9 @@ var AppConfigData Config
 func InitConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config") // 配置文件路径
+	viper.AddConfigPath("./config")     // 配置文件路径
+	viper.AddConfigPath("../../config") // 支持从 cmd/server 运行时查找
+	viper.AddConfigPath(".")            // 支持当前目录
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)
