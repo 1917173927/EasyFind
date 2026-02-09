@@ -3,7 +3,7 @@ package controllers
 import (
 	"easyfind/internal/models"
 	"easyfind/internal/services"
-	"net/http"
+	"easyfind/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +15,7 @@ type LoginRequest struct {
 	Remember bool   `json:"remember"`                // 记住我
 }
 
+// LoginResponse 响应数据结构
 type LoginResponse struct {
 	Token string `json:"token"`
 }
@@ -26,23 +27,31 @@ type LoginResponse struct {
 // @Accept json
 // @Produce json
 // @Param request body LoginRequest true "登录请求参数"
-// @Success 200 {object} LoginResponse
-// @Failure 401 {object} map[string]string "认证失败"
+// @Success 200 {object} response.Response{data=LoginResponse} "登录成功"
+// @Failure 200 {object} response.Response "认证失败"
 // @Router /api/v1/login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		response.Fail(c, response.INVALID_PARAMS)
 		return
 	}
 
 	token, err := services.AuthServiceApp.Login(req.Username, req.Password, req.Role)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		// 这里简单处理，实际可根据 error 类型返回不同 code
+		if err.Error() == "密码错误" {
+			response.Fail(c, response.ERROR_PASSWORD_WRONG)
+		} else if err.Error() == "用户不存在或角色不匹配" {
+			response.Fail(c, response.ERROR_USER_NOT_EXIST)
+		} else {
+			response.FailWithMessage(c, response.ERROR, err.Error())
+		}
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{Token: token})
+	// 统一返回格式：code, msg, data(token)
+	response.Success(c, LoginResponse{Token: token})
 }
 
 type RegisterRequest struct {
@@ -60,13 +69,13 @@ type RegisterRequest struct {
 // @Accept json
 // @Produce json
 // @Param request body RegisterRequest true "注册请求参数"
-// @Success 200 {object} map[string]string "注册成功"
-// @Failure 400 {object} map[string]string "请求参数错误"
+// @Success 200 {object} response.Response "注册成功"
+// @Failure 200 {object} response.Response "注册失败"
 // @Router /api/v1/register [post]
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		response.Fail(c, response.INVALID_PARAMS)
 		return
 	}
 
@@ -79,11 +88,15 @@ func Register(c *gin.Context) {
 	}
 
 	if err := services.AuthServiceApp.Register(account); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "用户名已存在" {
+			response.Fail(c, response.ERROR_USER_EXIST)
+		} else {
+			response.FailWithMessage(c, response.ERROR, err.Error())
+		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Account created successfully"})
+	response.Success(c, nil)
 }
 
 // 修改密码

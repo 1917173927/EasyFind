@@ -38,6 +38,15 @@ definitions:
     - role
     - username
     type: object
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data:
+        description: 使用 data 统一包裹数据
+      msg:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -57,15 +66,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/controllers.LoginResponse'
-        "401":
           description: 认证失败
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.Response'
       summary: 用户登录
       tags:
       - Auth
@@ -85,17 +88,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: 注册成功
+          description: 注册失败
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.Response'
       summary: 注册账号 (测试用)
       tags:
       - Auth

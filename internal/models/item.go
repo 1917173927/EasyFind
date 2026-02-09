@@ -13,13 +13,13 @@ const (
 	TypeLost  ItemType = "lost"
 	TypeFound ItemType = "found"
 
-	StatusPending   ItemStatus = "pending"
-	StatusApproved  ItemStatus = "approved"
-	StatusMatched   ItemStatus = "matched"
-	StatusClaimed   ItemStatus = "claimed"
-	StatusRejected  ItemStatus = "rejected"
-	StatusCancelled ItemStatus = "cancelled"
-	StatusArchived  ItemStatus = "archived"
+	StatusPending   ItemStatus = "pending"   // 待审核
+	StatusApproved  ItemStatus = "approved"  // 已通过
+	StatusMatched   ItemStatus = "matched"   // 已匹配（找到对应的人来对话了）
+	StatusClaimed   ItemStatus = "claimed"   // 已认领（确认是对的人）
+	StatusRejected  ItemStatus = "rejected"  // 已驳回
+	StatusCancelled ItemStatus = "cancelled" // 已取消
+	StatusArchived  ItemStatus = "archived"  // 已归档（认领成功或者超时未认领）
 )
 
 type Item struct {
