@@ -19,13 +19,13 @@ import (
 func GetProfile(c *gin.Context) {
 	username := c.Query("username")
 	if username == "" {
-		response.FailWithMessage(c, response.INVALID_PARAMS, "username is required")
+		response.FailWithMessage(c, response.InvalidParams, "username is required")
 		return
 	}
 
 	user, err := services.UserServiceApp.GetUserByUsername(username)
 	if err != nil {
-		response.FailWithMessage(c, response.ERROR_USER_NOT_EXIST, err.Error())
+		response.FailWithMessage(c, response.ErrUserNotExist, err.Error())
 		return
 	}
 
@@ -50,18 +50,18 @@ type UpdateProfileRequest struct {
 func UpdateProfile(c *gin.Context) {
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.INVALID_PARAMS)
+		response.Fail(c, response.InvalidParams)
 		return
 	}
 
 	userID, exists := c.Get("userID")
 	if !exists {
-		response.Fail(c, response.ERROR)
+		response.Fail(c, response.CodeError)
 		return
 	}
 
 	if err := services.UserServiceApp.UpdateUserProfile(userID.(uint), req.Name, req.Nickname, req.Phone); err != nil {
-		response.FailWithMessage(c, response.ERROR, err.Error())
+		response.FailWithMessage(c, response.CodeError, err.Error())
 		return
 	}
 
@@ -99,13 +99,13 @@ func DeleteAccount(c *gin.Context) {
 	}
 
 	if !isSelf && !isAdmin {
-		response.FailWithMessage(c, response.ERROR_AUTH_CHECK_TOKEN_FAIL, "无权操作其他用户的账号")
+		response.FailWithMessage(c, response.ErrTokenInvalid, "无权操作其他用户的账号")
 		return
 	}
 
 	// 执行删除
 	if err := services.UserServiceApp.DeleteUserByUsername(targetUsername); err != nil {
-		response.FailWithMessage(c, response.ERROR, err.Error())
+		response.FailWithMessage(c, response.CodeError, err.Error())
 		return
 	}
 

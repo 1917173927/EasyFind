@@ -119,7 +119,7 @@ type UpdatePasswordRequest struct {
 func UpdatePassword(c *gin.Context) {
 	var req UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.INVALID_PARAMS)
+		response.Fail(c, response.InvalidParams)
 		return
 	}
 
@@ -127,12 +127,12 @@ func UpdatePassword(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		// 理论上经过中间件不应该走到这里
-		response.Fail(c, response.ERROR)
+		response.Fail(c, response.CodeError)
 		return
 	}
 
 	if err := services.AuthServiceApp.UpdatePassword(userID.(uint), req.OldPassword, req.NewPassword); err != nil {
-		response.FailWithMessage(c, response.ERROR, err.Error())
+		response.FailWithMessage(c, response.CodeError, err.Error())
 		return
 	}
 
