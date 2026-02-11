@@ -18,6 +18,7 @@ type Account struct {
 	Password   string   `gorm:"not null" json:"-"`
 	Role       UserRole `gorm:"default:1" json:"role"` // 1:学生/老师, 2:失物招领管理员, 3:系统管理员
 	Name       string   `json:"name"`
+	Nickname   string   `json:"nickname"` // 昵称
 	Phone      string   `json:"phone"`
 	IsActive   bool     `gorm:"default:true" json:"is_active"`
 	FirstLogin bool     `gorm:"default:true" json:"first_login"` // 是否首次登录

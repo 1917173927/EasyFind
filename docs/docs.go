@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.LoginRequest"
+                            "$ref": "#/definitions/internal_controllers.LoginRequest"
                         }
                     }
                 ],
@@ -43,7 +43,30 @@ const docTemplate = `{
                     "200": {
                         "description": "认证失败",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/logout": {
+            "post": {
+                "description": "退出登录，客户端需自行丢弃 Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "退出登录",
+                "responses": {
+                    "200": {
+                        "description": "退出成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
                         }
                     }
                 }
@@ -69,7 +92,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.RegisterRequest"
+                            "$ref": "#/definitions/internal_controllers.RegisterRequest"
                         }
                     }
                 ],
@@ -77,7 +100,148 @@ const docTemplate = `{
                     "200": {
                         "description": "注册失败",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/account": {
+            "delete": {
+                "description": "硬删除账号。普通用户只能注销自己，管理员/系统管理员可以注销任意账号。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "注销/删除账号 (硬删除)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户名 (管理员使用)",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "注销成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/password": {
+            "put": {
+                "description": "修改当前登录用户的密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "修改密码",
+                "parameters": [
+                    {
+                        "description": "修改密码参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.UpdatePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改失败",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/profile": {
+            "get": {
+                "description": "根据 Username 获取用户资料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "获取个人资料",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/easyfind_internal_models.Account"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "修改当前登录用户的资料，为空的字段不修改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "修改个人资料",
+                "parameters": [
+                    {
+                        "description": "需要修改的参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
                         }
                     }
                 }
@@ -85,7 +249,92 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controllers.LoginRequest": {
+        "easyfind_internal_models.Account": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "first_login": {
+                    "description": "是否首次登录",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称",
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "1:学生/老师, 2:失物招领管理员, 3:系统管理员",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/easyfind_internal_models.UserRole"
+                        }
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "学号或工号",
+                    "type": "string"
+                }
+            }
+        },
+        "easyfind_internal_models.UserRole": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RoleStudentTeacher",
+                "RoleLFAdmin",
+                "RoleSysAdmin"
+            ]
+        },
+        "easyfind_pkg_response.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "使用 data 统一包裹数据"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_controllers.LoginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -109,7 +358,7 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.LoginResponse": {
+        "internal_controllers.LoginResponse": {
             "type": "object",
             "properties": {
                 "token": {
@@ -117,7 +366,7 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.RegisterRequest": {
+        "internal_controllers.RegisterRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -126,6 +375,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "name": {
+                    "type": "string"
+                },
+                "nickname": {
                     "type": "string"
                 },
                 "password": {
@@ -142,16 +394,31 @@ const docTemplate = `{
                 }
             }
         },
-        "response.Response": {
+        "internal_controllers.UpdatePasswordRequest": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                },
+                "old_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.UpdateProfileRequest": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer"
+                "name": {
+                    "type": "string"
                 },
-                "data": {
-                    "description": "使用 data 统一包裹数据"
+                "nickname": {
+                    "type": "string"
                 },
-                "msg": {
+                "phone": {
                     "type": "string"
                 }
             }
