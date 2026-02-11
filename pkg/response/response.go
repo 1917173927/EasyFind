@@ -20,6 +20,7 @@ const (
 	ERROR_CREATE_FAIL     = 10006
 	ERROR_TOKEN_INVALID   = 10007
 	ERROR_TOKEN_MALFORMED = 10008
+	ERROR_AUTH_CHECK_TOKEN_FAIL = 10009
 )
 
 var MsgFlags = map[int]string{
@@ -34,6 +35,7 @@ var MsgFlags = map[int]string{
 	ERROR_CREATE_FAIL:     "创建账号失败",
 	ERROR_TOKEN_INVALID:   "Token无效",
 	ERROR_TOKEN_MALFORMED: "Token格式错误",
+	ERROR_AUTH_CHECK_TOKEN_FAIL: "Token验证失败",
 }
 
 func GetMsg(code int) string {

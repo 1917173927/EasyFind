@@ -19,14 +19,15 @@ func Init(r *gin.Engine) {
 
 	// Swagger 文档路由访问 http://localhost:8080/swagger/index.html 即可查看文档
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
 
 	// 全局前缀
 	api := r.Group("/api/v1")
 	{
 		// 公开接口 (无需 JWT)
 		api.POST("/login", controllers.Login)
-		api.POST("/register", controllers.Register) // 临时注册接口
+		api.POST("/register", controllers.Register)      // 临时注册接口
+		api.GET("/user/profile", controllers.GetProfile) // 获取个人信息（公开）
+		api.POST("/logout", controllers.Logout)          // 兼容旧版本前端登出接口
 
 		// 需要 JWT 认证的接口
 		auth := api.Group("")
@@ -35,7 +36,8 @@ func Init(r *gin.Engine) {
 			// 用户相关
 			auth.POST("/auth/logout", controllers.Logout)
 			auth.PUT("/auth/password", controllers.UpdatePassword)
-			auth.GET("/user/profile", controllers.GetProfile)
+			auth.PUT("/user/profile", controllers.UpdateProfile)
+			auth.DELETE("/user/account", controllers.DeleteAccount) // 注销账号
 
 			// 物品发布与管理 (学生/老师)
 			auth.POST("/items", controllers.CreateItem)       // 发布物品

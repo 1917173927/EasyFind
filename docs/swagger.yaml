@@ -1,5 +1,62 @@
 definitions:
-  controllers.LoginRequest:
+  easyfind_internal_models.Account:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      first_login:
+        description: 是否首次登录
+        type: boolean
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      nickname:
+        description: 昵称
+        type: string
+      phone:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/easyfind_internal_models.UserRole'
+        description: 1:学生/老师, 2:失物招领管理员, 3:系统管理员
+      updatedAt:
+        type: string
+      username:
+        description: 学号或工号
+        type: string
+    type: object
+  easyfind_internal_models.UserRole:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - RoleStudentTeacher
+    - RoleLFAdmin
+    - RoleSysAdmin
+  easyfind_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data:
+        description: 使用 data 统一包裹数据
+      msg:
+        type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  internal_controllers.LoginRequest:
     properties:
       password:
         type: string
@@ -16,14 +73,16 @@ definitions:
     - role
     - username
     type: object
-  controllers.LoginResponse:
+  internal_controllers.LoginResponse:
     properties:
       token:
         type: string
     type: object
-  controllers.RegisterRequest:
+  internal_controllers.RegisterRequest:
     properties:
       name:
+        type: string
+      nickname:
         type: string
       password:
         type: string
@@ -38,13 +97,23 @@ definitions:
     - role
     - username
     type: object
-  response.Response:
+  internal_controllers.UpdatePasswordRequest:
     properties:
-      code:
-        type: integer
-      data:
-        description: 使用 data 统一包裹数据
-      msg:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  internal_controllers.UpdateProfileRequest:
+    properties:
+      name:
+        type: string
+      nickname:
+        type: string
+      phone:
         type: string
     type: object
 info:
@@ -61,15 +130,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.LoginRequest'
+          $ref: '#/definitions/internal_controllers.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: 认证失败
           schema:
-            $ref: '#/definitions/response.Response'
+            $ref: '#/definitions/easyfind_pkg_response.Response'
       summary: 用户登录
+      tags:
+      - Auth
+  /api/v1/logout:
+    post:
+      consumes:
+      - application/json
+      description: 退出登录，客户端需自行丢弃 Token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 退出成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 退出登录
       tags:
       - Auth
   /api/v1/register:
@@ -83,15 +167,104 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/controllers.RegisterRequest'
+          $ref: '#/definitions/internal_controllers.RegisterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: 注册失败
           schema:
-            $ref: '#/definitions/response.Response'
+            $ref: '#/definitions/easyfind_pkg_response.Response'
       summary: 注册账号 (测试用)
       tags:
       - Auth
+  /api/v1/user/account:
+    delete:
+      consumes:
+      - application/json
+      description: 硬删除账号。普通用户只能注销自己，管理员/系统管理员可以注销任意账号。
+      parameters:
+      - description: 目标用户名 (管理员使用)
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注销成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 注销/删除账号 (硬删除)
+      tags:
+      - User
+  /api/v1/user/password:
+    put:
+      consumes:
+      - application/json
+      description: 修改当前登录用户的密码
+      parameters:
+      - description: 修改密码参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改失败
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 修改密码
+      tags:
+      - Auth
+  /api/v1/user/profile:
+    get:
+      consumes:
+      - application/json
+      description: 根据 Username 获取用户资料
+      parameters:
+      - description: 用户名
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/easyfind_internal_models.Account'
+              type: object
+      summary: 获取个人资料
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: 修改当前登录用户的资料，为空的字段不修改
+      parameters:
+      - description: 需要修改的参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 修改个人资料
+      tags:
+      - User
 swagger: "2.0"

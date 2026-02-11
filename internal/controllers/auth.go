@@ -59,6 +59,7 @@ type RegisterRequest struct {
 	Password string `json:"password" binding:"required"`
 	Role     int    `json:"role" binding:"required"`
 	Name     string `json:"name"`
+	Nickname string `json:"nickname"`
 	Phone    string `json:"phone"`
 }
 
@@ -84,6 +85,7 @@ func Register(c *gin.Context) {
 		Password: req.Password, // Service 层会处理加密
 		Role:     models.UserRole(req.Role),
 		Name:     req.Name,
+		Nickname: req.Nickname,
 		Phone:    req.Phone,
 	}
 
@@ -99,8 +101,55 @@ func Register(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// 修改密码
-func UpdatePassword(c *gin.Context) {}
+type UpdatePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
 
-// 退出登录
-func Logout(c *gin.Context) {}
+// UpdatePassword godoc
+// @Summary 修改密码
+// @Description 修改当前登录用户的密码
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body UpdatePasswordRequest true "修改密码参数"
+// @Success 200 {object} response.Response "修改成功"
+// @Failure 200 {object} response.Response "修改失败"
+// @Router /api/v1/user/password [put]
+func UpdatePassword(c *gin.Context) {
+	var req UpdatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, response.INVALID_PARAMS)
+		return
+	}
+
+	// 从 Context 获取 userID (由 JWT 中间件设置)
+	userID, exists := c.Get("userID")
+	if !exists {
+		// 理论上经过中间件不应该走到这里
+		response.Fail(c, response.ERROR)
+		return
+	}
+
+	if err := services.AuthServiceApp.UpdatePassword(userID.(uint), req.OldPassword, req.NewPassword); err != nil {
+		response.FailWithMessage(c, response.ERROR, err.Error())
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// Logout godoc
+// @Summary 退出登录
+// @Description 退出登录，客户端需自行丢弃 Token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Response "退出成功"
+// @Router /api/v1/logout [post]
+func Logout(c *gin.Context) {
+	// JWT 是无状态的，服务端默认不存储 Token 状态。
+	// 真正的注销需要客户端丢弃 Token，或者服务端维护一个 Token 黑名单 (Redis)。
+	// 这里目前仅返回成功响应，提示前端清除 Token。
+	response.Success(c, nil)
+}

@@ -61,3 +61,30 @@ func (s *AuthService) Register(req models.Account) error {
 
 	return nil
 }
+
+// UpdatePassword 修改密码业务逻辑
+func (s *AuthService) UpdatePassword(userID uint, oldPassword, newPassword string) error {
+	var account models.Account
+	// 查询用户
+	if err := database.DB.First(&account, userID).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
+	// 验证旧密码
+	if !utils.CheckPasswordHash(oldPassword, account.Password) {
+		return errors.New("旧密码错误")
+	}
+
+	// 加密新密码
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("密码加密失败")
+	}
+
+	// 更新密码
+	if err := database.DB.Model(&account).Update("password", hashedPassword).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
