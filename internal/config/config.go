@@ -48,6 +48,7 @@ type JWTConfig struct {
 
 type AppConfig struct {
 	FileUploadPath string      `mapstructure:"file_upload_path"`
+	WebpUrlKey     string      `mapstructure:"webp_url_key"`
 	Roles          RolesConfig `mapstructure:"roles"`
 }
 
@@ -62,9 +63,9 @@ var AppConfigData Config
 func InitConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config")     // 配置文件路径
+	viper.AddConfigPath("./config")  // 配置文件路径
 	viper.AddConfigPath("../config") // 支持从 cmd/server 运行时查找
-	viper.AddConfigPath(".")            // 支持当前目录
+	viper.AddConfigPath(".")         // 支持当前目录
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)
@@ -73,4 +74,8 @@ func InitConfig() {
 	if err := viper.Unmarshal(&AppConfigData); err != nil {
 		log.Fatalf("Unable to decode into struct, %v", err)
 	}
+}
+
+func GetWebpUrlKey() string {
+	return AppConfigData.App.WebpUrlKey
 }

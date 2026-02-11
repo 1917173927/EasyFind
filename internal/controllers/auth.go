@@ -33,7 +33,7 @@ type LoginResponse struct {
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.INVALID_PARAMS)
+		response.Fail(c, response.InvalidParams)
 		return
 	}
 
@@ -41,11 +41,11 @@ func Login(c *gin.Context) {
 	if err != nil {
 		// 这里简单处理，实际可根据 error 类型返回不同 code
 		if err.Error() == "密码错误" {
-			response.Fail(c, response.ERROR_PASSWORD_WRONG)
+			response.Fail(c, response.ErrPasswordWrong)
 		} else if err.Error() == "用户不存在或角色不匹配" {
-			response.Fail(c, response.ERROR_USER_NOT_EXIST)
+			response.Fail(c, response.ErrUserNotExist)
 		} else {
-			response.FailWithMessage(c, response.ERROR, err.Error())
+			response.FailWithMessage(c, response.CodeError, err.Error())
 		}
 		return
 	}
@@ -75,7 +75,7 @@ type RegisterRequest struct {
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.INVALID_PARAMS)
+		response.Fail(c, response.InvalidParams)
 		return
 	}
 
@@ -89,9 +89,9 @@ func Register(c *gin.Context) {
 
 	if err := services.AuthServiceApp.Register(account); err != nil {
 		if err.Error() == "用户名已存在" {
-			response.Fail(c, response.ERROR_USER_EXIST)
+			response.Fail(c, response.ErrUserExist)
 		} else {
-			response.FailWithMessage(c, response.ERROR, err.Error())
+			response.FailWithMessage(c, response.CodeError, err.Error())
 		}
 		return
 	}
