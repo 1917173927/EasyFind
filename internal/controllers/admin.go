@@ -18,7 +18,20 @@ type GetRecordByAdminRequest struct {
 	PageSize    int    `form:"page_size"`
 }
 
-// GetRecordByAdmin 管理员获取帖子列表
+// GetRecordByAdmin godoc
+// @Summary 管理员获取物品列表
+// @Description 管理员获取所有物品列表，支持筛选
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param campus query string false "校区"
+// @Param category query string false "分类"
+// @Param lost_or_found query int false "物品类型 (1:Lost, 2:Found)"
+// @Param status query string false "状态"
+// @Param page_num query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
+// @Router /api/v1/admin/items [get]
 func GetRecordByAdmin(c *gin.Context) {
 	var req GetRecordByAdminRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -57,7 +70,17 @@ type GetPendingRecordByAdminRequest struct {
 	PageSize    int `form:"page_size"`
 }
 
-// GetPendingRecordByAdmin 获取待审核列表
+// GetPendingRecordByAdmin godoc
+// @Summary 管理员获取待审核物品
+// @Description 管理员获取所有待审核的物品列表
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param lost_or_found query int false "物品类型 (1:Lost, 2:Found)"
+// @Param page_num query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
+// @Router /api/v1/admin/items/pending [get]
 func GetPendingRecordByAdmin(c *gin.Context) {
 	var req GetPendingRecordByAdminRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -90,7 +113,15 @@ func GetPendingRecordByAdmin(c *gin.Context) {
 	})
 }
 
-// ApproveRecord 通过审核
+// ApproveRecord godoc
+// @Summary 通过审核
+// @Description 管理员通过物品发布的审核
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param id path int true "物品ID"
+// @Success 200 {object} response.Response "操作成功"
+// @Router /api/v1/admin/items/{id}/approve [put]
 func ApproveRecord(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -111,7 +142,16 @@ type RejectRecordRequest struct {
 	RejectReason string `json:"reject_reason" binding:"required"`
 }
 
-// RejectRecord 驳回审核
+// RejectRecord godoc
+// @Summary 驳回审核
+// @Description 管理员驳回物品发布的审核，需提供理由
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param id path int true "物品ID"
+// @Param request body RejectRecordRequest true "驳回理由"
+// @Success 200 {object} response.Response "操作成功"
+// @Router /api/v1/admin/items/{id}/reject [put]
 func RejectRecord(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -138,7 +178,16 @@ type ArchiveRecordRequest struct {
 	ProcessMethod string `json:"process_method" binding:"required"`
 }
 
-// ArchiveRecord 归档帖子
+// ArchiveRecord godoc
+// @Summary 归档帖子
+// @Description 管理员归档物品帖子
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param id path int true "物品ID"
+// @Param request body ArchiveRecordRequest true "处理方式"
+// @Success 200 {object} response.Response "归档成功"
+// @Router /api/v1/admin/items/{id}/archive [put]
 func ArchiveRecord(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -166,7 +215,16 @@ type GetPendingClaimByAdminRequest struct {
 	PageSize int `form:"page_size"`
 }
 
-// GetPendingClaimByAdmin 管理员获取待审核认领列表
+// GetPendingClaimByAdmin godoc
+// @Summary 管理员获取待审核认领
+// @Description 管理员获取所有待审核的认领申请
+// @Tags Admin (Claim)
+// @Accept json
+// @Produce json
+// @Param page_num query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
+// @Router /api/v1/admin/claims/pending [get]
 func GetPendingClaimByAdmin(c *gin.Context) {
 	var req GetPendingClaimByAdminRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -199,7 +257,15 @@ func GetPendingClaimByAdmin(c *gin.Context) {
 	})
 }
 
-// ApproveClaim 通过认领申请
+// ApproveClaim godoc
+// @Summary 通过认领申请
+// @Description 管理员通过认领申请
+// @Tags Admin (Claim)
+// @Accept json
+// @Produce json
+// @Param id path int true "认领ID"
+// @Success 200 {object} response.Response "操作成功"
+// @Router /api/v1/admin/claims/{id}/approve [put]
 func ApproveClaim(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -216,7 +282,15 @@ func ApproveClaim(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// RejectClaim 驳回认领申请
+// RejectClaim godoc
+// @Summary 驳回认领申请
+// @Description 管理员驳回认领申请
+// @Tags Admin (Claim)
+// @Accept json
+// @Produce json
+// @Param id path int true "认领ID"
+// @Success 200 {object} response.Response "操作成功"
+// @Router /api/v1/admin/claims/{id}/reject [put]
 func RejectClaim(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

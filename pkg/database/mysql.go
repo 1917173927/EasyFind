@@ -33,5 +33,24 @@ func InitMySQL() {
 	}
 
 	// 可选: 自动迁移模型
-	DB.AutoMigrate(&models.Account{}, &models.Item{}, &models.Claim{})
+	err = DB.AutoMigrate(&models.Account{}, &models.Item{}, &models.Claim{}, &models.LostCategory{})
+	if err != nil {
+		log.Printf("auto migrate failed: %v", err)
+	}
+
+	// 初始化分类数据 (如果表为空)
+	var count int64
+	DB.Model(&models.LostCategory{}).Count(&count)
+	if count == 0 {
+		categories := []models.LostCategory{
+			{CategoryName: "电子产品"},
+			{CategoryName: "生活用品"},
+			{CategoryName: "书籍文具"},
+			{CategoryName: "证件卡片"},
+			{CategoryName: "衣物服饰"},
+			{CategoryName: "其他"},
+		}
+		DB.Create(&categories)
+		log.Println("Initialized default categories")
+	}
 }

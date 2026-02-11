@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"easyfind/internal/apiErr"
 	"easyfind/internal/models"
 	"easyfind/internal/services"
 	"easyfind/pkg/response"
@@ -20,7 +21,7 @@ import (
 func GetProfile(c *gin.Context) {
 	username := c.Query("username")
 	if username == "" {
-		response.FailWithMessage(c, response.InvalidParams, "username is required")
+		apiErr.HandleBizError(c, response.InvalidParams, "username is required")
 		return
 	}
 
@@ -28,7 +29,7 @@ func GetProfile(c *gin.Context) {
 	var err error
 	user, err = services.UserServiceApp.GetUserByUsername(username)
 	if err != nil {
-		response.FailWithMessage(c, response.ErrUserNotExist, err.Error())
+		apiErr.HandleBizError(c, response.ErrUserNotExist, err.Error())
 		return
 	}
 
@@ -53,18 +54,18 @@ type UpdateProfileRequest struct {
 func UpdateProfile(c *gin.Context) {
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.InvalidParams)
+		apiErr.HandleValidatorError(c, err)
 		return
 	}
 
 	userID, exists := c.Get("userID")
 	if !exists {
-		response.Fail(c, response.CodeError)
+		apiErr.HandleSysError(c, response.CodeError, nil) // 理论上中间件已拦截
 		return
 	}
 
 	if err := services.UserServiceApp.UpdateUserProfile(userID.(uint), req.Name, req.Nickname, req.Phone); err != nil {
-		response.FailWithMessage(c, response.CodeError, err.Error())
+		apiErr.HandleSysError(c, response.CodeError, err)
 		return
 	}
 
@@ -102,13 +103,13 @@ func DeleteAccount(c *gin.Context) {
 	}
 
 	if !isSelf && !isAdmin {
-		response.FailWithMessage(c, response.ErrTokenInvalid, "无权操作其他用户的账号")
+		apiErr.HandleBizError(c, response.ErrTokenInvalid, "无权操作其他用户的账号")
 		return
 	}
 
 	// 执行删除
 	if err := services.UserServiceApp.DeleteUserByUsername(targetUsername); err != nil {
-		response.FailWithMessage(c, response.CodeError, err.Error())
+		apiErr.HandleSysError(c, response.CodeError, err)
 		return
 	}
 

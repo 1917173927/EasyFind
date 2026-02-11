@@ -1,3 +1,4 @@
+basePath: /api/v1
 definitions:
   easyfind_internal_models.Account:
     properties:
@@ -29,6 +30,146 @@ definitions:
         description: 学号或工号
         type: string
     type: object
+  easyfind_internal_models.Claim:
+    properties:
+      claimant:
+        $ref: '#/definitions/easyfind_internal_models.Account'
+      claimant_id:
+        type: integer
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      item:
+        $ref: '#/definitions/easyfind_internal_models.Item'
+      item_id:
+        type: integer
+      proof:
+        description: 证明材料 (如图片URL)
+        type: string
+      status:
+        description: '状态: pending/approved/rejected/archived'
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  easyfind_internal_models.Item:
+    properties:
+      campus:
+        description: '类型 (lost: 失物, found: 招领)'
+        type: string
+      category:
+        description: 分类
+        type: string
+      contact_name:
+        description: 联系人姓名
+        type: string
+      contact_phone:
+        description: 联系人电话
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        description: 描述
+        type: string
+      id:
+        type: integer
+      img1:
+        description: 照片 (JSON或逗号分隔的URL)
+        type: string
+      img2:
+        description: 照片 (JSON或逗号分隔的URL)
+        type: string
+      img3:
+        description: 照片 (JSON或逗号分隔的URL)
+        type: string
+      img4:
+        type: string
+      is_bounty:
+        description: 是否有悬赏(保留字段)
+        type: boolean
+      location:
+        description: 地点
+        type: string
+      process_method:
+        description: 处理方式
+        type: string
+      publisher:
+        allOf:
+        - $ref: '#/definitions/easyfind_internal_models.Account'
+        description: 发布者信息
+      publisher_id:
+        type: integer
+      reject_reason:
+        description: 审核拒绝原因
+        type: string
+      reviewer:
+        allOf:
+        - $ref: '#/definitions/easyfind_internal_models.Account'
+        description: 审核者信息
+      reviewer_id:
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/easyfind_internal_models.ItemStatus'
+        description: 状态
+      time:
+        description: 时间
+        type: string
+      title:
+        description: 标题
+        type: string
+      type:
+        $ref: '#/definitions/easyfind_internal_models.ItemType'
+      updatedAt:
+        type: string
+    type: object
+  easyfind_internal_models.ItemStatus:
+    enum:
+    - pending
+    - approved
+    - matched
+    - claimed
+    - rejected
+    - cancelled
+    - archived
+    type: string
+    x-enum-comments:
+      StatusApproved: 已通过
+      StatusArchived: 已归档（认领成功或者超时未认领）
+      StatusCancelled: 已取消
+      StatusClaimed: 已认领（确认是对的人）
+      StatusMatched: 已匹配（找到对应的人来对话了）
+      StatusPending: 待审核
+      StatusRejected: 已驳回
+    x-enum-descriptions:
+    - 待审核
+    - 已通过
+    - 已匹配（找到对应的人来对话了）
+    - 已认领（确认是对的人）
+    - 已驳回
+    - 已取消
+    - 已归档（认领成功或者超时未认领）
+    x-enum-varnames:
+    - StatusPending
+    - StatusApproved
+    - StatusMatched
+    - StatusClaimed
+    - StatusRejected
+    - StatusCancelled
+    - StatusArchived
+  easyfind_internal_models.ItemType:
+    enum:
+    - lost
+    - found
+    type: string
+    x-enum-varnames:
+    - TypeLost
+    - TypeFound
   easyfind_internal_models.UserRole:
     enum:
     - 1
@@ -55,6 +196,57 @@ definitions:
       valid:
         description: Valid is true if Time is not NULL
         type: boolean
+    type: object
+  internal_controllers.ArchiveRecordRequest:
+    properties:
+      process_method:
+        type: string
+    required:
+    - process_method
+    type: object
+  internal_controllers.CreatClaimRequest:
+    properties:
+      item_id:
+        type: integer
+      proof:
+        type: string
+    required:
+    - item_id
+    type: object
+  internal_controllers.CreateRecordRequest:
+    properties:
+      campus:
+        type: string
+      category:
+        type: string
+      contact_name:
+        type: string
+      contact_phone:
+        type: string
+      description:
+        type: string
+      img1:
+        type: string
+      img2:
+        type: string
+      img3:
+        type: string
+      img4:
+        type: string
+      is_bounty:
+        type: boolean
+      location:
+        type: string
+      time:
+        description: 前端传字符串，后端解析
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    required:
+    - title
+    - type
     type: object
   internal_controllers.LoginRequest:
     properties:
@@ -97,6 +289,13 @@ definitions:
     - role
     - username
     type: object
+  internal_controllers.RejectRecordRequest:
+    properties:
+      reject_reason:
+        type: string
+    required:
+    - reject_reason
+    type: object
   internal_controllers.UpdatePasswordRequest:
     properties:
       new_password:
@@ -116,9 +315,559 @@ definitions:
       phone:
         type: string
     type: object
+  internal_controllers.UpdateRecordRequest:
+    properties:
+      campus:
+        type: string
+      category:
+        type: string
+      contact_name:
+        type: string
+      contact_phone:
+        type: string
+      description:
+        type: string
+      img1:
+        type: string
+      img2:
+        type: string
+      img3:
+        type: string
+      img4:
+        type: string
+      location:
+        type: string
+      time:
+        type: string
+      title:
+        type: string
+    type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the API server for EasyFind application.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: EasyFind API
+  version: "1.0"
 paths:
+  /api/v1/admin/claims/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: 管理员通过认领申请
+      parameters:
+      - description: 认领ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 通过认领申请
+      tags:
+      - Admin (Claim)
+  /api/v1/admin/claims/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: 管理员驳回认领申请
+      parameters:
+      - description: 认领ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 驳回认领申请
+      tags:
+      - Admin (Claim)
+  /api/v1/admin/claims/pending:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取所有待审核的认领申请
+      parameters:
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 管理员获取待审核认领
+      tags:
+      - Admin (Claim)
+  /api/v1/admin/items:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取所有物品列表，支持筛选
+      parameters:
+      - description: 校区
+        in: query
+        name: campus
+        type: string
+      - description: 分类
+        in: query
+        name: category
+        type: string
+      - description: 物品类型 (1:Lost, 2:Found)
+        in: query
+        name: lost_or_found
+        type: integer
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 管理员获取物品列表
+      tags:
+      - Admin (Item)
+  /api/v1/admin/items/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: 管理员通过物品发布的审核
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 通过审核
+      tags:
+      - Admin (Item)
+  /api/v1/admin/items/{id}/archive:
+    put:
+      consumes:
+      - application/json
+      description: 管理员归档物品帖子
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 处理方式
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.ArchiveRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 归档成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 归档帖子
+      tags:
+      - Admin (Item)
+  /api/v1/admin/items/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: 管理员驳回物品发布的审核，需提供理由
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 驳回理由
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.RejectRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 驳回审核
+      tags:
+      - Admin (Item)
+  /api/v1/admin/items/pending:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取所有待审核的物品列表
+      parameters:
+      - description: 物品类型 (1:Lost, 2:Found)
+        in: query
+        name: lost_or_found
+        type: integer
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 管理员获取待审核物品
+      tags:
+      - Admin (Item)
+  /api/v1/claims:
+    post:
+      consumes:
+      - application/json
+      description: 用户申请认领物品
+      parameters:
+      - description: 申请信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreatClaimRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 申请成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 申请认领
+      tags:
+      - Claim (User)
+  /api/v1/claims/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取认领详情 (发布者和申请者可见)
+      parameters:
+      - description: 认领ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/easyfind_internal_models.Claim'
+              type: object
+      summary: 获取认领详情
+      tags:
+      - Claim (User)
+  /api/v1/claims/{id}/confirm:
+    put:
+      consumes:
+      - application/json
+      description: 确认认领，将物品状态标记为已找到 (仅发布者可用)
+      parameters:
+      - description: 认领ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 确认成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 确认认领
+      tags:
+      - Claim (User)
+  /api/v1/items:
+    get:
+      consumes:
+      - application/json
+      description: 获取失物招领列表 (区分 Lost/Found)
+      parameters:
+      - description: 校区
+        in: query
+        name: campus
+        type: string
+      - description: 分类
+        in: query
+        name: category
+        type: string
+      - description: 物品类型 (1:Lost, 2:Found)
+        in: query
+        name: lost_or_found
+        type: integer
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取失物招领列表
+      tags:
+      - Item (Public)
+    post:
+      consumes:
+      - application/json
+      description: 用户发布失物或招领信息
+      parameters:
+      - description: 发布信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreateRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 发布成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 发布失物招领
+      tags:
+      - Item (User)
+  /api/v1/items/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 用户删除自己发布的记录
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 删除记录
+      tags:
+      - Item (User)
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取物品详情
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/easyfind_internal_models.Item'
+              type: object
+      summary: 获取物品详情
+      tags:
+      - Item (Public)
+    put:
+      consumes:
+      - application/json
+      description: 用户更新自己发布的记录
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.UpdateRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 更新记录
+      tags:
+      - Item (User)
+  /api/v1/items/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: 用户取消自己发布的记录 (通常用于已找到或不再需要)
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 取消发布
+      tags:
+      - Item (User)
+  /api/v1/items/all:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有物品列表 (不区分 Lost/Found)
+      parameters:
+      - description: 校区
+        in: query
+        name: campus
+        type: string
+      - description: 分类
+        in: query
+        name: category
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取所有物品列表
+      tags:
+      - Item (Public)
+  /api/v1/kinds:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有物品分类
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+      summary: 获取分类列表
+      tags:
+      - Item (Public)
   /api/v1/login:
     post:
       consumes:
@@ -156,6 +905,70 @@ paths:
       summary: 退出登录
       tags:
       - Auth
+  /api/v1/my/claims:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的所有认领申请
+      parameters:
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取我的认领列表
+      tags:
+      - Claim (User)
+  /api/v1/my/items:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户发布的所有记录
+      parameters:
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取我的发布
+      tags:
+      - Item (User)
   /api/v1/register:
     post:
       consumes:
@@ -267,4 +1080,9 @@ paths:
       summary: 修改个人资料
       tags:
       - User
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

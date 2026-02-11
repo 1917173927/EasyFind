@@ -235,8 +235,8 @@ func RemoveImg(record models.Item, img1 string, img2 string, img3 string, img4 s
 }
 
 func UpdateRecord(id int, record models.Item) error {
-	result := database.DB.Model(models.Item{}).Select("*").
-		Omit("id", "type", "created_at", "publisher").
+	result := database.DB.Model(&models.Item{}).
+		Omit("id", "type", "created_at", "publisher", "publisher_id", "status").
 		Where("id = ?", id).Updates(&record)
 	if result.Error != nil {
 		return result.Error
@@ -354,10 +354,21 @@ func GetMyClaimTotalPageNum(ClaimantID uint) (*int64, error) {
 
 func GetPendingClaimByAdmin(pageNum, pageSize int) ([]models.Claim, error) {
 	var claims []models.Claim
-	result := database.DB.
-		Where("status = ?", models.StatusPending).Preload("Item").
+	result := database.DB.Model(&models.Claim{}).
+		Where("status = ?", "Pending"). // 尝试匹配大写 Pending (GORM 默认值可能是大写)
+		Preload("Item").
 		Limit(pageSize).Offset((pageNum - 1) * pageSize).
 		Order("created_at desc").Find(&claims)
+
+	// 如果查不到大写的，再试试小写的 (兼容性处理)
+	if len(claims) == 0 {
+		database.DB.Model(&models.Claim{}).
+			Where("status = ?", "pending").
+			Preload("Item").
+			Limit(pageSize).Offset((pageNum - 1) * pageSize).
+			Order("created_at desc").Find(&claims)
+	}
+
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -367,7 +378,7 @@ func GetPendingClaimByAdmin(pageNum, pageSize int) ([]models.Claim, error) {
 func GetPendingClaimTotalPageNumByAdmin() (*int64, error) {
 	var pageNum int64
 	result := database.DB.Model(&models.Claim{}).
-		Where("status = ?", models.StatusPending).
+		Where("status = ?", string(models.StatusPending)).
 		Count(&pageNum)
 	if result.Error != nil {
 		return nil, result.Error

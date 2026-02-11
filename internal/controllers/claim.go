@@ -15,7 +15,15 @@ type CreatClaimRequest struct {
 	Proof  string `json:"proof"`
 }
 
-// CreatClaim 申请认领
+// CreatClaim godoc
+// @Summary 申请认领
+// @Description 用户申请认领物品
+// @Tags Claim (User)
+// @Accept json
+// @Produce json
+// @Param request body CreatClaimRequest true "申请信息"
+// @Success 200 {object} response.Response "申请成功"
+// @Router /api/v1/claims [post]
 func CreatClaim(c *gin.Context) {
 	var req CreatClaimRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,7 +57,16 @@ type GetMyClaimRequest struct {
 	PageSize int `form:"page_size"`
 }
 
-// GetMyClaim 获取我的认领列表
+// GetMyClaim godoc
+// @Summary 获取我的认领列表
+// @Description 获取当前用户的所有认领申请
+// @Tags Claim (User)
+// @Accept json
+// @Produce json
+// @Param page_num query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
+// @Router /api/v1/my/claims [get]
 func GetMyClaim(c *gin.Context) {
 	var req GetMyClaimRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -88,7 +105,15 @@ func GetMyClaim(c *gin.Context) {
 	})
 }
 
-// GetClaimByID 获取认领详情
+// GetClaimByID godoc
+// @Summary 获取认领详情
+// @Description 根据ID获取认领详情 (发布者和申请者可见)
+// @Tags Claim (User)
+// @Accept json
+// @Produce json
+// @Param id path int true "认领ID"
+// @Success 200 {object} response.Response{data=models.Claim} "获取成功"
+// @Router /api/v1/claims/{id} [get]
 func GetClaimByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -115,7 +140,15 @@ func GetClaimByID(c *gin.Context) {
 	response.Success(c, claim)
 }
 
-// ConfirmClaim 确认认领 (归档)
+// ConfirmClaim godoc
+// @Summary 确认认领
+// @Description 确认认领，将物品状态标记为已找到 (仅发布者可用)
+// @Tags Claim (User)
+// @Accept json
+// @Produce json
+// @Param id path int true "认领ID"
+// @Success 200 {object} response.Response "确认成功"
+// @Router /api/v1/claims/{id}/confirm [put]
 func ConfirmClaim(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

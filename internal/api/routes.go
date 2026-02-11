@@ -36,7 +36,9 @@ func Init(r *gin.Engine) {
 			// 个人信息
 			auth.POST("/logout", controllers.Logout)
 			auth.PUT("/password", controllers.UpdatePassword)
-			// auth.GET("/profile", controllers.GetProfile)
+			auth.GET("/profile", controllers.GetProfile)
+			auth.PUT("/profile", controllers.UpdateProfile)
+			auth.DELETE("/account", controllers.DeleteAccount)
 
 			// 我的物品管理
 			auth.POST("/items", controllers.CreateRecord)

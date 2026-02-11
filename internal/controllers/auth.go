@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"easyfind/internal/apiErr"
 	"easyfind/internal/models"
 	"easyfind/internal/services"
 	"easyfind/pkg/response"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +35,7 @@ type LoginResponse struct {
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.InvalidParams)
+		apiErr.HandleValidatorError(c, err)
 		return
 	}
 
@@ -41,11 +43,11 @@ func Login(c *gin.Context) {
 	if err != nil {
 		// 这里简单处理，实际可根据 error 类型返回不同 code
 		if err.Error() == "密码错误" {
-			response.Fail(c, response.ErrPasswordWrong)
+			apiErr.HandleBizError(c, response.ErrPasswordWrong, "")
 		} else if err.Error() == "用户不存在或角色不匹配" {
-			response.Fail(c, response.ErrUserNotExist)
+			apiErr.HandleBizError(c, response.ErrUserNotExist, "")
 		} else {
-			response.FailWithMessage(c, response.CodeError, err.Error())
+			apiErr.HandleSysError(c, response.CodeError, err)
 		}
 		return
 	}
@@ -76,7 +78,7 @@ type RegisterRequest struct {
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.InvalidParams)
+		apiErr.HandleValidatorError(c, err)
 		return
 	}
 
@@ -91,9 +93,9 @@ func Register(c *gin.Context) {
 
 	if err := services.AuthServiceApp.Register(account); err != nil {
 		if err.Error() == "用户名已存在" {
-			response.Fail(c, response.ErrUserExist)
+			apiErr.HandleBizError(c, response.ErrUserExist, "")
 		} else {
-			response.FailWithMessage(c, response.CodeError, err.Error())
+			apiErr.HandleSysError(c, response.CodeError, err)
 		}
 		return
 	}
@@ -119,7 +121,7 @@ type UpdatePasswordRequest struct {
 func UpdatePassword(c *gin.Context) {
 	var req UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, response.InvalidParams)
+		apiErr.HandleValidatorError(c, err)
 		return
 	}
 
@@ -127,12 +129,12 @@ func UpdatePassword(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		// 理论上经过中间件不应该走到这里
-		response.Fail(c, response.CodeError)
+		apiErr.HandleSysError(c, response.CodeError, errors.New("userID missing from context"))
 		return
 	}
 
 	if err := services.AuthServiceApp.UpdatePassword(userID.(uint), req.OldPassword, req.NewPassword); err != nil {
-		response.FailWithMessage(c, response.CodeError, err.Error())
+		apiErr.HandleSysError(c, response.CodeError, err)
 		return
 	}
 

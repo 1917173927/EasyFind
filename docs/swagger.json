@@ -1,9 +1,836 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "This is the API server for EasyFind application.",
+        "title": "EasyFind API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
     "paths": {
+        "/api/v1/admin/claims/pending": {
+            "get": {
+                "description": "管理员获取所有待审核的认领申请",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Claim)"
+                ],
+                "summary": "管理员获取待审核认领",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/claims/{id}/approve": {
+            "put": {
+                "description": "管理员通过认领申请",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Claim)"
+                ],
+                "summary": "通过认领申请",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "认领ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/claims/{id}/reject": {
+            "put": {
+                "description": "管理员驳回认领申请",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Claim)"
+                ],
+                "summary": "驳回认领申请",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "认领ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/items": {
+            "get": {
+                "description": "管理员获取所有物品列表，支持筛选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "管理员获取物品列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "校区",
+                        "name": "campus",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "物品类型 (1:Lost, 2:Found)",
+                        "name": "lost_or_found",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/items/pending": {
+            "get": {
+                "description": "管理员获取所有待审核的物品列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "管理员获取待审核物品",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品类型 (1:Lost, 2:Found)",
+                        "name": "lost_or_found",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/items/{id}/approve": {
+            "put": {
+                "description": "管理员通过物品发布的审核",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "通过审核",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/items/{id}/archive": {
+            "put": {
+                "description": "管理员归档物品帖子",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "归档帖子",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "处理方式",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.ArchiveRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "归档成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/items/{id}/reject": {
+            "put": {
+                "description": "管理员驳回物品发布的审核，需提供理由",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "驳回审核",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "驳回理由",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.RejectRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/claims": {
+            "post": {
+                "description": "用户申请认领物品",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "申请认领",
+                "parameters": [
+                    {
+                        "description": "申请信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreatClaimRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "申请成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/claims/{id}": {
+            "get": {
+                "description": "根据ID获取认领详情 (发布者和申请者可见)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "获取认领详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "认领ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/easyfind_internal_models.Claim"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/claims/{id}/confirm": {
+            "put": {
+                "description": "确认认领，将物品状态标记为已找到 (仅发布者可用)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "确认认领",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "认领ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "确认成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/items": {
+            "get": {
+                "description": "获取失物招领列表 (区分 Lost/Found)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (Public)"
+                ],
+                "summary": "获取失物招领列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "校区",
+                        "name": "campus",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "物品类型 (1:Lost, 2:Found)",
+                        "name": "lost_or_found",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "用户发布失物或招领信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (User)"
+                ],
+                "summary": "发布失物招领",
+                "parameters": [
+                    {
+                        "description": "发布信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreateRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "发布成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/items/all": {
+            "get": {
+                "description": "获取所有物品列表 (不区分 Lost/Found)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (Public)"
+                ],
+                "summary": "获取所有物品列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "校区",
+                        "name": "campus",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/items/{id}": {
+            "get": {
+                "description": "根据ID获取物品详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (Public)"
+                ],
+                "summary": "获取物品详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/easyfind_internal_models.Item"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "用户更新自己发布的记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (User)"
+                ],
+                "summary": "更新记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.UpdateRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "用户删除自己发布的记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (User)"
+                ],
+                "summary": "删除记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/items/{id}/cancel": {
+            "put": {
+                "description": "用户取消自己发布的记录 (通常用于已找到或不再需要)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (User)"
+                ],
+                "summary": "取消发布",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取消成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kinds": {
+            "get": {
+                "description": "获取所有物品分类",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (Public)"
+                ],
+                "summary": "获取分类列表",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/login": {
             "post": {
                 "description": "用户登录接口，支持学生/老师、失物招领管理员、系统管理员",
@@ -56,6 +883,112 @@
                         "description": "退出成功",
                         "schema": {
                             "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/my/claims": {
+            "get": {
+                "description": "获取当前用户的所有认领申请",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "获取我的认领列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/my/items": {
+            "get": {
+                "description": "获取当前用户发布的所有记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Item (User)"
+                ],
+                "summary": "获取我的发布",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -284,6 +1217,202 @@
                 }
             }
         },
+        "easyfind_internal_models.Claim": {
+            "type": "object",
+            "properties": {
+                "claimant": {
+                    "$ref": "#/definitions/easyfind_internal_models.Account"
+                },
+                "claimant_id": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item": {
+                    "$ref": "#/definitions/easyfind_internal_models.Item"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "proof": {
+                    "description": "证明材料 (如图片URL)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "状态: pending/approved/rejected/archived",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "easyfind_internal_models.Item": {
+            "type": "object",
+            "properties": {
+                "campus": {
+                    "description": "类型 (lost: 失物, found: 招领)",
+                    "type": "string"
+                },
+                "category": {
+                    "description": "分类",
+                    "type": "string"
+                },
+                "contact_name": {
+                    "description": "联系人姓名",
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "description": "联系人电话",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "img1": {
+                    "description": "照片 (JSON或逗号分隔的URL)",
+                    "type": "string"
+                },
+                "img2": {
+                    "description": "照片 (JSON或逗号分隔的URL)",
+                    "type": "string"
+                },
+                "img3": {
+                    "description": "照片 (JSON或逗号分隔的URL)",
+                    "type": "string"
+                },
+                "img4": {
+                    "type": "string"
+                },
+                "is_bounty": {
+                    "description": "是否有悬赏(保留字段)",
+                    "type": "boolean"
+                },
+                "location": {
+                    "description": "地点",
+                    "type": "string"
+                },
+                "process_method": {
+                    "description": "处理方式",
+                    "type": "string"
+                },
+                "publisher": {
+                    "description": "发布者信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/easyfind_internal_models.Account"
+                        }
+                    ]
+                },
+                "publisher_id": {
+                    "type": "integer"
+                },
+                "reject_reason": {
+                    "description": "审核拒绝原因",
+                    "type": "string"
+                },
+                "reviewer": {
+                    "description": "审核者信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/easyfind_internal_models.Account"
+                        }
+                    ]
+                },
+                "reviewer_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "状态",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/easyfind_internal_models.ItemStatus"
+                        }
+                    ]
+                },
+                "time": {
+                    "description": "时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "标题",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/easyfind_internal_models.ItemType"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "easyfind_internal_models.ItemStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "matched",
+                "claimed",
+                "rejected",
+                "cancelled",
+                "archived"
+            ],
+            "x-enum-comments": {
+                "StatusApproved": "已通过",
+                "StatusArchived": "已归档（认领成功或者超时未认领）",
+                "StatusCancelled": "已取消",
+                "StatusClaimed": "已认领（确认是对的人）",
+                "StatusMatched": "已匹配（找到对应的人来对话了）",
+                "StatusPending": "待审核",
+                "StatusRejected": "已驳回"
+            },
+            "x-enum-descriptions": [
+                "待审核",
+                "已通过",
+                "已匹配（找到对应的人来对话了）",
+                "已认领（确认是对的人）",
+                "已驳回",
+                "已取消",
+                "已归档（认领成功或者超时未认领）"
+            ],
+            "x-enum-varnames": [
+                "StatusPending",
+                "StatusApproved",
+                "StatusMatched",
+                "StatusClaimed",
+                "StatusRejected",
+                "StatusCancelled",
+                "StatusArchived"
+            ]
+        },
+        "easyfind_internal_models.ItemType": {
+            "type": "string",
+            "enum": [
+                "lost",
+                "found"
+            ],
+            "x-enum-varnames": [
+                "TypeLost",
+                "TypeFound"
+            ]
+        },
         "easyfind_internal_models.UserRole": {
             "type": "integer",
             "enum": [
@@ -320,6 +1449,83 @@
                 "valid": {
                     "description": "Valid is true if Time is not NULL",
                     "type": "boolean"
+                }
+            }
+        },
+        "internal_controllers.ArchiveRecordRequest": {
+            "type": "object",
+            "required": [
+                "process_method"
+            ],
+            "properties": {
+                "process_method": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.CreatClaimRequest": {
+            "type": "object",
+            "required": [
+                "item_id"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "integer"
+                },
+                "proof": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.CreateRecordRequest": {
+            "type": "object",
+            "required": [
+                "title",
+                "type"
+            ],
+            "properties": {
+                "campus": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "img1": {
+                    "type": "string"
+                },
+                "img2": {
+                    "type": "string"
+                },
+                "img3": {
+                    "type": "string"
+                },
+                "img4": {
+                    "type": "string"
+                },
+                "is_bounty": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "time": {
+                    "description": "前端传字符串，后端解析",
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -383,6 +1589,17 @@
                 }
             }
         },
+        "internal_controllers.RejectRecordRequest": {
+            "type": "object",
+            "required": [
+                "reject_reason"
+            ],
+            "properties": {
+                "reject_reason": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_controllers.UpdatePasswordRequest": {
             "type": "object",
             "required": [
@@ -411,6 +1628,54 @@
                     "type": "string"
                 }
             }
+        },
+        "internal_controllers.UpdateRecordRequest": {
+            "type": "object",
+            "properties": {
+                "campus": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "img1": {
+                    "type": "string"
+                },
+                "img2": {
+                    "type": "string"
+                },
+                "img3": {
+                    "type": "string"
+                },
+                "img4": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
