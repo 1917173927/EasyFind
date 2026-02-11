@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"easyfind/internal/models"
 	"easyfind/internal/services"
 	"easyfind/pkg/response"
 
@@ -23,7 +24,9 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := services.UserServiceApp.GetUserByUsername(username)
+	var user *models.Account
+	var err error
+	user, err = services.UserServiceApp.GetUserByUsername(username)
 	if err != nil {
 		response.FailWithMessage(c, response.ErrUserNotExist, err.Error())
 		return
