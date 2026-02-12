@@ -19,7 +19,7 @@ const (
 	ErrCreateFail     = 10006
 	ErrTokenInvalid   = 10007
 	ErrTokenMalformed = 10008
-	
+	ErrUserBanned     = 10009
 
 	ErrItemNotFound   = 20001
 	ErrItemCreateFail = 20002

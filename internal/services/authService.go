@@ -24,6 +24,11 @@ func (s *AuthService) Login(username, password string, role int) (string, error)
 		return "", err
 	}
 
+	// 检查账号状态
+	if !account.IsActive {
+		return "", errors.New("账号已被冻结")
+	}
+
 	// 验证密码
 	if !utils.CheckPasswordHash(password, account.Password) {
 		return "", errors.New("密码错误")
@@ -53,6 +58,11 @@ func (s *AuthService) Register(req models.Account) error {
 		return errors.New("密码加密失败")
 	}
 	req.Password = hashedPassword
+
+	// 设置默认头像
+	if req.Avatar == "" {
+		req.Avatar = "default.jpeg"
+	}
 
 	// 创建用户
 	if err := database.DB.Create(&req).Error; err != nil {

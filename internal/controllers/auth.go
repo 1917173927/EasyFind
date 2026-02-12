@@ -46,6 +46,8 @@ func Login(c *gin.Context) {
 			apiErr.HandleBizError(c, response.ErrPasswordWrong, "")
 		} else if err.Error() == "用户不存在或角色不匹配" {
 			apiErr.HandleBizError(c, response.ErrUserNotExist, "")
+		} else if err.Error() == "账号已被冻结" {
+			apiErr.HandleBizError(c, response.ErrUserBanned, "账号已被冻结，请联系管理员")
 		} else {
 			apiErr.HandleSysError(c, response.CodeError, err)
 		}

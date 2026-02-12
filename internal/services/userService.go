@@ -25,7 +25,7 @@ func (s *UserService) GetUserByUsername(username string) (*models.Account, error
 }
 
 // UpdateUserProfile 更新个人信息
-func (s *UserService) UpdateUserProfile(id uint, name, nickname, phone string) error {
+func (s *UserService) UpdateUserProfile(id uint, name, nickname, phone, avatar string) error {
 	updates := make(map[string]interface{})
 
 	// 只有非空值才更新
@@ -37,6 +37,9 @@ func (s *UserService) UpdateUserProfile(id uint, name, nickname, phone string) e
 	}
 	if phone != "" {
 		updates["phone"] = phone
+	}
+	if avatar != "" {
+		updates["avatar"] = avatar
 	}
 
 	if len(updates) == 0 {

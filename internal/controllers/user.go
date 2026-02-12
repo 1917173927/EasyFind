@@ -40,6 +40,7 @@ type UpdateProfileRequest struct {
 	Name     string `json:"name"`
 	Nickname string `json:"nickname"`
 	Phone    string `json:"phone"`
+	Avatar   string `json:"avatar"`
 }
 
 // UpdateProfile godoc
@@ -64,7 +65,7 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	if err := services.UserServiceApp.UpdateUserProfile(userID.(uint), req.Name, req.Nickname, req.Phone); err != nil {
+	if err := services.UserServiceApp.UpdateUserProfile(userID.(uint), req.Name, req.Nickname, req.Phone, req.Avatar); err != nil {
 		apiErr.HandleSysError(c, response.CodeError, err)
 		return
 	}
