@@ -92,8 +92,11 @@ func GetRecord(campus, category string, lostOrFound int, location string, days i
 	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
-	result := query.Where("type = ?", getTargetType(lostOrFound)).
-		Limit(pageSize).Offset((pageNum - 1) * pageSize).
+	if lostOrFound != 0 {
+		query = query.Where("type = ?", getTargetType(lostOrFound))
+	}
+
+	result := query.Limit(pageSize).Offset((pageNum - 1) * pageSize).
 		Order("created_at desc").Find(&record)
 	if result.Error != nil {
 		return nil, result.Error
@@ -122,8 +125,11 @@ func GetTotalPageNum(campus, category string, lostOrFound int, location string, 
 	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
-	result := query.Where("type = ?", getTargetType(lostOrFound)).
-		Count(&pageNum)
+	if lostOrFound != 0 {
+		query = query.Where("type = ?", getTargetType(lostOrFound))
+	}
+
+	result := query.Count(&pageNum)
 	if result.Error != nil {
 		return nil, result.Error
 	}
