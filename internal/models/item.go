@@ -37,7 +37,7 @@ type Item struct {
 	Img4         string     `json:"img4"`
 	ContactName  string     `json:"contact_name"`                                                                                                                // 联系人姓名
 	ContactPhone string     `json:"contact_phone"`                                                                                                               // 联系人电话
-	IsBounty     bool       `json:"is_bounty"`                                                                                                                   // 是否有悬赏(保留字段)
+	Bounty       float64    `gorm:"default:0" json:"bounty"`                                                                                                     // 悬赏金额 (0表示无悬赏)
 	Status       ItemStatus `gorm:"type:enum('pending', 'approved', 'matched', 'claimed', 'rejected', 'cancelled', 'archived');default:'pending'" json:"status"` // 状态
 
 	PublisherID uint    `json:"publisher_id"`

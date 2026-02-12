@@ -19,8 +19,12 @@ func getTargetType(lostOrFound int) models.ItemType {
 	return models.TypeFound
 }
 
-func buildCommonQuery(campus, category, status string) *gorm.DB {
-	query := database.DB.Model(&models.Item{})
+func buildCommonQuery(campus, category, status, location string, days int, hasBounty *bool) *gorm.DB {
+	// 使用 Preload("Publisher") 预加载发布者信息
+	query := database.DB.Model(&models.Item{}).Preload("Publisher", func(db *gorm.DB) *gorm.DB {
+		// 这里可以根据需要排除敏感字段，例如密码
+		return db.Select("id, username, name, nickname, avatar, phone, role, is_active, first_login")
+	})
 
 	if campus != "" && strings.ToLower(campus) != "all" {
 		query = query.Where("campus = ?", campus)
@@ -28,18 +32,50 @@ func buildCommonQuery(campus, category, status string) *gorm.DB {
 	if category != "" && strings.ToLower(category) != "all" {
 		query = query.Where("category = ?", category)
 	}
+	if location != "" {
+		query = query.Where("location LIKE ?", "%"+location+"%")
+	}
+	if days > 0 {
+		query = query.Where("created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)", days)
+	}
+	if hasBounty != nil {
+		if *hasBounty {
+			query = query.Where("bounty > 0")
+		} else {
+			query = query.Where("bounty = 0")
+		}
+	}
+
 	if status != "" && strings.ToLower(status) != "all" {
 		query = query.Where("status = ?", status)
 	} else {
+		// 默认只显示已审核通过的，除非明确指定了其他状态，或者后台管理接口可能会覆盖这个逻辑
+		// 这里改为：如果 status 为空，默认 status = 'approved'。
+		// 但为了兼容原来的逻辑（IsBounty修改前是 buildCommonQuery(campus, category, string(models.StatusApproved))）
+		// 我们需要小心。调用者一般会传入 status。
+		// 如果调用者传空字符串，以前是 "!= Cancelled AND != Archived"。
+		// 现在的需求是"按物品状态筛选"。
+		// 假如用户没传 status，默认应该展示 approved。
+		// 如果用户传了 status，就按 status 查。
+		// 之前的调用者传了 `string(models.StatusApproved)`。
+		// 所以如果 status 是 "approved"，就是 status = 'approved'。
+
+		// 保持原有逻辑：如果 status 不为空，就用 status。
+		// 如果 status 为空，保留原来的排除逻辑？
+		// 原来 logic: if status != "" -> Where("status = ?", status) else -> Where("status != ? ...")
 		query = query.Where("status != ? AND status != ?", models.StatusCancelled, models.StatusArchived)
 	}
 
 	return query
 }
 
-func GetAllItem(campus, category string, pageNum, pageSize int) ([]models.Item, error) {
+func GetAllItem(campus, category, location string, days int, status string, hasBounty *bool, pageNum, pageSize int) ([]models.Item, error) {
 	var record []models.Item
-	query := buildCommonQuery(campus, category, string(models.StatusApproved))
+	// 如果 status 为空，默认只查 approved
+	if status == "" {
+		status = string(models.StatusApproved)
+	}
+	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Limit(pageSize).Offset((pageNum - 1) * pageSize).
 		Order("created_at desc").Find(&record)
@@ -49,9 +85,12 @@ func GetAllItem(campus, category string, pageNum, pageSize int) ([]models.Item, 
 	return record, nil
 }
 
-func GetRecord(campus, category string, lostOrFound int, pageNum, pageSize int) ([]models.Item, error) {
+func GetRecord(campus, category string, lostOrFound int, location string, days int, status string, hasBounty *bool, pageNum, pageSize int) ([]models.Item, error) {
 	var record []models.Item
-	query := buildCommonQuery(campus, category, string(models.StatusApproved))
+	if status == "" {
+		status = string(models.StatusApproved)
+	}
+	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Where("type = ?", getTargetType(lostOrFound)).
 		Limit(pageSize).Offset((pageNum - 1) * pageSize).
@@ -62,9 +101,12 @@ func GetRecord(campus, category string, lostOrFound int, pageNum, pageSize int) 
 	return record, nil
 }
 
-func GetAllLostAndFoundTotalPageNum(campus, category string) (*int64, error) {
+func GetAllLostAndFoundTotalPageNum(campus, category, location string, days int, status string, hasBounty *bool) (*int64, error) {
 	var pageNum int64
-	query := buildCommonQuery(campus, category, string(models.StatusApproved))
+	if status == "" {
+		status = string(models.StatusApproved)
+	}
+	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Count(&pageNum)
 	if result.Error != nil {
@@ -73,9 +115,12 @@ func GetAllLostAndFoundTotalPageNum(campus, category string) (*int64, error) {
 	return &pageNum, nil
 }
 
-func GetTotalPageNum(campus, category string, lostOrFound int) (*int64, error) {
+func GetTotalPageNum(campus, category string, lostOrFound int, location string, days int, status string, hasBounty *bool) (*int64, error) {
 	var pageNum int64
-	query := buildCommonQuery(campus, category, string(models.StatusApproved))
+	if status == "" {
+		status = string(models.StatusApproved)
+	}
+	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Where("type = ?", getTargetType(lostOrFound)).
 		Count(&pageNum)

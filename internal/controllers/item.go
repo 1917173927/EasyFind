@@ -12,10 +12,14 @@ import (
 )
 
 type GetAllItemRequest struct {
-	Campus   string `form:"campus"`
-	Category string `form:"category"`
-	PageNum  int    `form:"page_num"`
-	PageSize int    `form:"page_size"`
+	Campus    string `form:"campus"`
+	Category  string `form:"category"`
+	Location  string `form:"location"`
+	Days      int    `form:"days"`
+	Status    string `form:"status"`
+	HasBounty *bool  `form:"has_bounty"`
+	PageNum   int    `form:"page_num"`
+	PageSize  int    `form:"page_size"`
 }
 
 // GetAllItem godoc
@@ -26,6 +30,10 @@ type GetAllItemRequest struct {
 // @Produce json
 // @Param campus query string false "校区"
 // @Param category query string false "分类"
+// @Param location query string false "地点 (模糊搜索)"
+// @Param days query int false "最近几天 (例如 3 表示最近3天)"
+// @Param status query string false "状态 (默认 approved)"
+// @Param has_bounty query bool false "是否有悬赏 (true/false)"
 // @Param page_num query int false "页码"
 // @Param page_size query int false "每页数量"
 // @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
@@ -44,13 +52,13 @@ func GetAllItem(c *gin.Context) {
 		req.PageSize = 10
 	}
 
-	records, err := services.GetAllItem(req.Campus, req.Category, req.PageNum, req.PageSize)
+	records, err := services.GetAllItem(req.Campus, req.Category, req.Location, req.Days, req.Status, req.HasBounty, req.PageNum, req.PageSize)
 	if err != nil {
 		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
 		return
 	}
 
-	total, err := services.GetAllLostAndFoundTotalPageNum(req.Campus, req.Category)
+	total, err := services.GetAllLostAndFoundTotalPageNum(req.Campus, req.Category, req.Location, req.Days, req.Status, req.HasBounty)
 	if err != nil {
 		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
 		return
@@ -66,6 +74,10 @@ type GetRecordRequest struct {
 	Campus      string `form:"campus"`
 	Category    string `form:"category"`
 	LostOrFound int    `form:"lost_or_found"`
+	Location    string `form:"location"`
+	Days        int    `form:"days"`
+	Status      string `form:"status"`
+	HasBounty   *bool  `form:"has_bounty"`
 	PageNum     int    `form:"page_num"`
 	PageSize    int    `form:"page_size"`
 }
@@ -79,6 +91,10 @@ type GetRecordRequest struct {
 // @Param campus query string false "校区"
 // @Param category query string false "分类"
 // @Param lost_or_found query int false "物品类型 (1:Lost, 2:Found)"
+// @Param location query string false "地点 (模糊搜索)"
+// @Param days query int false "最近几天 (例如 3 表示最近3天)"
+// @Param status query string false "状态 (默认 approved)"
+// @Param has_bounty query bool false "是否有悬赏 (true/false)"
 // @Param page_num query int false "页码"
 // @Param page_size query int false "每页数量"
 // @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
@@ -97,13 +113,13 @@ func GetRecord(c *gin.Context) {
 		req.PageSize = 10
 	}
 
-	records, err := services.GetRecord(req.Campus, req.Category, req.LostOrFound, req.PageNum, req.PageSize)
+	records, err := services.GetRecord(req.Campus, req.Category, req.LostOrFound, req.Location, req.Days, req.Status, req.HasBounty, req.PageNum, req.PageSize)
 	if err != nil {
 		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
 		return
 	}
 
-	total, err := services.GetTotalPageNum(req.Campus, req.Category, req.LostOrFound)
+	total, err := services.GetTotalPageNum(req.Campus, req.Category, req.LostOrFound, req.Location, req.Days, req.Status, req.HasBounty)
 	if err != nil {
 		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
 		return
@@ -142,20 +158,20 @@ func GetRecordById(c *gin.Context) {
 }
 
 type CreateRecordRequest struct {
-	Title        string `json:"title" binding:"required"`
-	Type         string `json:"type" binding:"required,oneof=lost found"`
-	Campus       string `json:"campus"`
-	Category     string `json:"category"`
-	Location     string `json:"location"`
-	Time         string `json:"time"` // 前端传字符串，后端解析
-	Description  string `json:"description"`
-	Img1         string `json:"img1"`
-	Img2         string `json:"img2"`
-	Img3         string `json:"img3"`
-	Img4         string `json:"img4"`
-	ContactName  string `json:"contact_name"`
-	ContactPhone string `json:"contact_phone"`
-	IsBounty     bool   `json:"is_bounty"`
+	Title        string  `json:"title" binding:"required"`
+	Type         string  `json:"type" binding:"required,oneof=lost found"`
+	Campus       string  `json:"campus"`
+	Category     string  `json:"category"`
+	Location     string  `json:"location"`
+	Time         string  `json:"time"` // 前端传字符串，后端解析
+	Description  string  `json:"description"`
+	Img1         string  `json:"img1"`
+	Img2         string  `json:"img2"`
+	Img3         string  `json:"img3"`
+	Img4         string  `json:"img4"`
+	ContactName  string  `json:"contact_name"`
+	ContactPhone string  `json:"contact_phone"`
+	Bounty       float64 `json:"bounty"`
 }
 
 // CreateRecord godoc
@@ -206,7 +222,7 @@ func CreateRecord(c *gin.Context) {
 		Img4:         req.Img4,
 		ContactName:  req.ContactName,
 		ContactPhone: req.ContactPhone,
-		IsBounty:     req.IsBounty,
+		Bounty:       req.Bounty,
 		PublisherID:  userID.(uint),
 		Status:       models.StatusPending,
 	}
