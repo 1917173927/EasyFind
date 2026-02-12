@@ -27,6 +27,7 @@ const (
 	ErrItemDeleteFail = 20004
 	ErrNoPerMission   = 20005
 	ErrDBQueryFail    = 20006
+	ErrTargetNotFound = 20007
 
 	ErrClaimCreateFail = 30001
 	ErrClaimNotFound   = 30002
@@ -52,6 +53,7 @@ var MsgFlags = map[int]string{
 	ErrItemDeleteFail: "删除物品失败",
 	ErrNoPerMission:   "无权限执行此操作",
 	ErrDBQueryFail:    "数据库查询失败",
+	ErrTargetNotFound: "没有找到目标",
 
 	ErrClaimCreateFail: "申请认领失败",
 	ErrClaimNotFound:   "认领记录不存在",

@@ -55,6 +55,7 @@ func Init(r *gin.Engine) {
 			auth.GET("/profile", controllers.GetProfile)
 			auth.PUT("/profile", controllers.UpdateProfile)
 			auth.DELETE("/account", controllers.DeleteAccount)
+			auth.POST("/feedbacks", controllers.CreateFeedback)
 
 			// 我的物品管理
 			auth.POST("/items", controllers.CreateRecord)
@@ -88,16 +89,39 @@ func Init(r *gin.Engine) {
 			admin.GET("/claims/pending", controllers.GetPendingClaimByAdmin)
 			admin.PUT("/claims/:id/approve", controllers.ApproveClaim)
 			admin.PUT("/claims/:id/reject", controllers.RejectClaim)
+
+			// 公告管理 (Role 2 only creates pending regional announcements)
+			admin.POST("/announcements", controllers.CreateRegionalAnnouncement)
 		}
 
-		// 超级管理员接口 (System Admin)
-		sysAdmin := api.Group("/sysadmin")
-		sysAdmin.Use(middleware.JWT(), middleware.AuthSysAdmin())
+		// 超级管理员接口 (SuperAdmin)
+		super := api.Group("/super")
+		super.Use(middleware.JWT(), middleware.AuthSysAdmin())
 		{
-			// 用户管理
-			// sysAdmin.GET("/users", controllers.AdminGetUserList)
-			// sysAdmin.POST("/users", controllers.AdminCreateUser)
-			// sysAdmin.PUT("/users/:id/status", controllers.AdminUpdateUserStatus)
+			// 全局概览
+			super.GET("/stats", controllers.GetSystemStats)
+
+			// 账号与权限
+			super.GET("/users", controllers.GetUserList)
+			super.POST("/users/admin", controllers.AdminCreateUser)
+			super.PUT("/users/:id/status", controllers.AdminUpdateUserStatus)
+
+			// 分类管理
+			super.POST("/categories", controllers.AddCategory)
+			super.DELETE("/categories/:id", controllers.DeleteCategory)
+
+			// 公告管理
+			super.GET("/announcements", controllers.GetAnnouncementsByAdmin)
+			super.POST("/announcements", controllers.CreateAnnouncement)
+			super.PUT("/announcements/review", controllers.ReviewAnnouncement)
+			super.DELETE("/announcements/:id", controllers.DeleteAnnouncement)
+
+			// 反馈管理
+			super.GET("/feedbacks", controllers.GetFeedbacks)
+			super.PUT("/feedbacks/:id/reply", controllers.ReplyFeedback)
+
+			// 数据清理
+			super.POST("/data/cleanup", controllers.CleanupData)
 		}
 	}
 }

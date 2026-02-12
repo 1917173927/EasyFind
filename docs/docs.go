@@ -24,6 +24,40 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/admin/announcements": {
+            "post": {
+                "description": "管理员发布区域公告，状态默认为 pending",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Announcement)"
+                ],
+                "summary": "发布区域公告 (需审核)",
+                "parameters": [
+                    {
+                        "description": "公告内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreateRegionalAnnouncementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功，等待审核",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/claims/pending": {
             "get": {
                 "description": "管理员获取所有待审核的认领申请",
@@ -525,6 +559,30 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "地点 (模糊搜索)",
+                        "name": "location",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最近几天 (例如 3 表示最近3天)",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态 (默认 approved)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否有悬赏 (true/false)",
+                        "name": "has_bounty",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "页码",
                         "name": "page_num",
@@ -616,6 +674,30 @@ const docTemplate = `{
                         "type": "string",
                         "description": "分类",
                         "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "地点 (模糊搜索)",
+                        "name": "location",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最近几天 (例如 3 表示最近3天)",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态 (默认 approved)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否有悬赏 (true/false)",
+                        "name": "has_bounty",
                         "in": "query"
                     },
                     {
@@ -1034,6 +1116,560 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/super/announcements": {
+            "get": {
+                "description": "获取系统公告列表 (支持筛选)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "获取公告列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类型 (global/region)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "状态 (published/pending/rejected)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "区域",
+                        "name": "region",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "发布新的系统公告",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "发布系统公告",
+                "parameters": [
+                    {
+                        "description": "公告内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreateAnnouncementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "发布成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/announcements/review": {
+            "put": {
+                "description": "审核区域公告 (通过/拒绝)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "审核公告",
+                "parameters": [
+                    {
+                        "description": "审核信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.ReviewAnnouncementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/announcements/{id}": {
+            "delete": {
+                "description": "删除指定的公告",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "删除公告",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/categories": {
+            "post": {
+                "description": "添加新的物品分类",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "添加物品分类",
+                "parameters": [
+                    {
+                        "description": "分类信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.AddCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "添加成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/categories/{id}": {
+            "delete": {
+                "description": "删除指定的物品分类",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "删除物品分类",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "分类ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/data/cleanup": {
+            "post": {
+                "description": "清理指定天数前的无效数据(如已取消的帖子)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "清理过期数据",
+                "parameters": [
+                    {
+                        "description": "清理参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CleanupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "清理成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/feedbacks": {
+            "get": {
+                "description": "获取用户提交的反馈与投诉",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "获取用户反馈",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "状态 (pending, resolved)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/feedbacks/{id}/reply": {
+            "put": {
+                "description": "管理员回复并处理反馈",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "回复反馈",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "反馈ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "回复内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.ReplyFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/stats": {
+            "get": {
+                "description": "超级管理员获取全局统计数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "获取系统统计数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/easyfind_internal_models.SystemStats"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/users": {
+            "get": {
+                "description": "获取所有用户列表 (支持按角色筛选)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "获取用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色 (1:用户, 2:管理员)",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词 (用户名/姓名/昵称)",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/users/admin": {
+            "post": {
+                "description": "创建新的失物招领管理员账号",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "创建失物招领管理员",
+                "parameters": [
+                    {
+                        "description": "管理员信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreateAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/super/users/{id}/status": {
+            "put": {
+                "description": "修改账号激活状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SuperAdmin"
+                ],
+                "summary": "禁用/启用账号",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.UpdateUserStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/upload/image": {
+            "post": {
+                "description": "上传图片文件，支持自动去重，返回图片 URL",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "上传图片",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "图片文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "失败",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/account": {
             "delete": {
                 "description": "硬删除账号。普通用户只能注销自己，管理员/系统管理员可以注销任意账号。",
@@ -1180,6 +1816,10 @@ const docTemplate = `{
         "easyfind_internal_models.Account": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "description": "头像",
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -1194,6 +1834,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "is_active": {
+                    "description": "账号是否被封号（被管理员拿下）",
                     "type": "boolean"
                 },
                 "name": {
@@ -1263,6 +1904,10 @@ const docTemplate = `{
         "easyfind_internal_models.Item": {
             "type": "object",
             "properties": {
+                "bounty": {
+                    "description": "悬赏金额 (0表示无悬赏)",
+                    "type": "number"
+                },
                 "campus": {
                     "description": "类型 (lost: 失物, found: 招领)",
                     "type": "string"
@@ -1306,10 +1951,6 @@ const docTemplate = `{
                 },
                 "img4": {
                     "type": "string"
-                },
-                "is_bounty": {
-                    "description": "是否有悬赏(保留字段)",
-                    "type": "boolean"
                 },
                 "location": {
                     "description": "地点",
@@ -1419,6 +2060,31 @@ const docTemplate = `{
                 "TypeFound"
             ]
         },
+        "easyfind_internal_models.SystemStats": {
+            "type": "object",
+            "properties": {
+                "active_users": {
+                    "description": "30天内活跃",
+                    "type": "integer"
+                },
+                "solved_items": {
+                    "description": "status = claimed/matched",
+                    "type": "integer"
+                },
+                "today_items": {
+                    "type": "integer"
+                },
+                "total_claims": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_users": {
+                    "type": "integer"
+                }
+            }
+        },
         "easyfind_internal_models.UserRole": {
             "type": "integer",
             "enum": [
@@ -1458,6 +2124,17 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_controllers.AddCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_controllers.ArchiveRecordRequest": {
             "type": "object",
             "required": [
@@ -1466,6 +2143,18 @@ const docTemplate = `{
             "properties": {
                 "process_method": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_controllers.CleanupRequest": {
+            "type": "object",
+            "required": [
+                "days"
+            ],
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -1483,6 +2172,51 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_controllers.CreateAdminRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.CreateAnnouncementRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "is_top": {
+                    "type": "boolean"
+                },
+                "region": {
+                    "description": "if type is region",
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "global or region",
+                    "type": "string"
+                }
+            }
+        },
         "internal_controllers.CreateRecordRequest": {
             "type": "object",
             "required": [
@@ -1490,6 +2224,9 @@ const docTemplate = `{
                 "type"
             ],
             "properties": {
+                "bounty": {
+                    "type": "number"
+                },
                 "campus": {
                     "type": "string"
                 },
@@ -1517,9 +2254,6 @@ const docTemplate = `{
                 "img4": {
                     "type": "string"
                 },
-                "is_bounty": {
-                    "type": "boolean"
-                },
                 "location": {
                     "type": "string"
                 },
@@ -1531,6 +2265,33 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string",
+                    "enum": [
+                        "lost",
+                        "found"
+                    ]
+                }
+            }
+        },
+        "internal_controllers.CreateRegionalAnnouncementRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "region",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "is_top": {
+                    "type": "boolean"
+                },
+                "region": {
+                    "description": "Region is required for regional announcements",
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -1606,6 +2367,37 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_controllers.ReplyFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "reply"
+            ],
+            "properties": {
+                "reply": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.ReviewAnnouncementRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "status"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "only allow these two",
+                    "type": "string",
+                    "enum": [
+                        "published",
+                        "rejected"
+                    ]
+                }
+            }
+        },
         "internal_controllers.UpdatePasswordRequest": {
             "type": "object",
             "required": [
@@ -1624,6 +2416,9 @@ const docTemplate = `{
         "internal_controllers.UpdateProfileRequest": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1672,6 +2467,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.UpdateUserStatusRequest": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_controllers.UploadResponse": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }

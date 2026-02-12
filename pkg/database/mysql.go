@@ -33,7 +33,7 @@ func InitMySQL() {
 	}
 
 	// 可选: 自动迁移模型
-	err = DB.AutoMigrate(&models.Account{}, &models.Item{}, &models.Claim{}, &models.LostCategory{}, &models.Image{})
+	err = DB.AutoMigrate(&models.Account{}, &models.Item{}, &models.Claim{}, &models.LostCategory{}, &models.Image{}, &models.Announcement{}, &models.Feedback{})
 	if err != nil {
 		log.Printf("auto migrate failed: %v", err)
 	}

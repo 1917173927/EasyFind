@@ -60,3 +60,15 @@ func (s *UserService) DeleteUserByUsername(username string) error {
 	}
 	return nil
 }
+
+// CreateFeedback 创建用户反馈
+func (s *UserService) CreateFeedback(userID uint, fType, content, contact string) error {
+	feedback := models.Feedback{
+		UserID:  userID,
+		Type:    fType,
+		Content: content,
+		Contact: contact,
+		Status:  "pending",
+	}
+	return database.DB.Create(&feedback).Error
+}

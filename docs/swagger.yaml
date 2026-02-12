@@ -2,6 +2,9 @@ basePath: /api/v1
 definitions:
   easyfind_internal_models.Account:
     properties:
+      avatar:
+        description: 头像
+        type: string
       createdAt:
         type: string
       deletedAt:
@@ -12,6 +15,7 @@ definitions:
       id:
         type: integer
       is_active:
+        description: 账号是否被封号（被管理员拿下）
         type: boolean
       name:
         type: string
@@ -57,6 +61,9 @@ definitions:
     type: object
   easyfind_internal_models.Item:
     properties:
+      bounty:
+        description: 悬赏金额 (0表示无悬赏)
+        type: number
       campus:
         description: '类型 (lost: 失物, found: 招领)'
         type: string
@@ -89,9 +96,6 @@ definitions:
         type: string
       img4:
         type: string
-      is_bounty:
-        description: 是否有悬赏(保留字段)
-        type: boolean
       location:
         description: 地点
         type: string
@@ -170,6 +174,23 @@ definitions:
     x-enum-varnames:
     - TypeLost
     - TypeFound
+  easyfind_internal_models.SystemStats:
+    properties:
+      active_users:
+        description: 30天内活跃
+        type: integer
+      solved_items:
+        description: status = claimed/matched
+        type: integer
+      today_items:
+        type: integer
+      total_claims:
+        type: integer
+      total_items:
+        type: integer
+      total_users:
+        type: integer
+    type: object
   easyfind_internal_models.UserRole:
     enum:
     - 1
@@ -197,12 +218,27 @@ definitions:
         description: Valid is true if Time is not NULL
         type: boolean
     type: object
+  internal_controllers.AddCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
   internal_controllers.ArchiveRecordRequest:
     properties:
       process_method:
         type: string
     required:
     - process_method
+    type: object
+  internal_controllers.CleanupRequest:
+    properties:
+      days:
+        minimum: 1
+        type: integer
+    required:
+    - days
     type: object
   internal_controllers.CreatClaimRequest:
     properties:
@@ -213,8 +249,41 @@ definitions:
     required:
     - item_id
     type: object
+  internal_controllers.CreateAdminRequest:
+    properties:
+      name:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - name
+    - password
+    - username
+    type: object
+  internal_controllers.CreateAnnouncementRequest:
+    properties:
+      content:
+        type: string
+      is_top:
+        type: boolean
+      region:
+        description: if type is region
+        type: string
+      title:
+        type: string
+      type:
+        description: global or region
+        type: string
+    required:
+    - content
+    - title
+    type: object
   internal_controllers.CreateRecordRequest:
     properties:
+      bounty:
+        type: number
       campus:
         type: string
       category:
@@ -233,8 +302,6 @@ definitions:
         type: string
       img4:
         type: string
-      is_bounty:
-        type: boolean
       location:
         type: string
       time:
@@ -243,10 +310,29 @@ definitions:
       title:
         type: string
       type:
+        enum:
+        - lost
+        - found
         type: string
     required:
     - title
     - type
+    type: object
+  internal_controllers.CreateRegionalAnnouncementRequest:
+    properties:
+      content:
+        type: string
+      is_top:
+        type: boolean
+      region:
+        description: Region is required for regional announcements
+        type: string
+      title:
+        type: string
+    required:
+    - content
+    - region
+    - title
     type: object
   internal_controllers.LoginRequest:
     properties:
@@ -296,6 +382,27 @@ definitions:
     required:
     - reject_reason
     type: object
+  internal_controllers.ReplyFeedbackRequest:
+    properties:
+      reply:
+        type: string
+    required:
+    - reply
+    type: object
+  internal_controllers.ReviewAnnouncementRequest:
+    properties:
+      id:
+        type: integer
+      status:
+        description: only allow these two
+        enum:
+        - published
+        - rejected
+        type: string
+    required:
+    - id
+    - status
+    type: object
   internal_controllers.UpdatePasswordRequest:
     properties:
       new_password:
@@ -308,6 +415,8 @@ definitions:
     type: object
   internal_controllers.UpdateProfileRequest:
     properties:
+      avatar:
+        type: string
       name:
         type: string
       nickname:
@@ -342,6 +451,18 @@ definitions:
       title:
         type: string
     type: object
+  internal_controllers.UpdateUserStatusRequest:
+    properties:
+      is_active:
+        type: boolean
+    type: object
+  internal_controllers.UploadResponse:
+    properties:
+      file_name:
+        type: string
+      url:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -356,6 +477,28 @@ info:
   title: EasyFind API
   version: "1.0"
 paths:
+  /api/v1/admin/announcements:
+    post:
+      consumes:
+      - application/json
+      description: 管理员发布区域公告，状态默认为 pending
+      parameters:
+      - description: 公告内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreateRegionalAnnouncementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 提交成功，等待审核
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 发布区域公告 (需审核)
+      tags:
+      - Admin (Announcement)
   /api/v1/admin/claims/{id}/approve:
     put:
       consumes:
@@ -670,6 +813,22 @@ paths:
         in: query
         name: lost_or_found
         type: integer
+      - description: 地点 (模糊搜索)
+        in: query
+        name: location
+        type: string
+      - description: 最近几天 (例如 3 表示最近3天)
+        in: query
+        name: days
+        type: integer
+      - description: 状态 (默认 approved)
+        in: query
+        name: status
+        type: string
+      - description: 是否有悬赏 (true/false)
+        in: query
+        name: has_bounty
+        type: boolean
       - description: 页码
         in: query
         name: page_num
@@ -822,6 +981,22 @@ paths:
         in: query
         name: category
         type: string
+      - description: 地点 (模糊搜索)
+        in: query
+        name: location
+        type: string
+      - description: 最近几天 (例如 3 表示最近3天)
+        in: query
+        name: days
+        type: integer
+      - description: 状态 (默认 approved)
+        in: query
+        name: status
+        type: string
+      - description: 是否有悬赏 (true/false)
+        in: query
+        name: has_bounty
+        type: boolean
       - description: 页码
         in: query
         name: page_num
@@ -991,6 +1166,360 @@ paths:
       summary: 注册账号 (测试用)
       tags:
       - Auth
+  /api/v1/super/announcements:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统公告列表 (支持筛选)
+      parameters:
+      - description: 类型 (global/region)
+        in: query
+        name: type
+        type: string
+      - description: 状态 (published/pending/rejected)
+        in: query
+        name: status
+        type: string
+      - description: 区域
+        in: query
+        name: region
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 获取公告列表
+      tags:
+      - SuperAdmin
+    post:
+      consumes:
+      - application/json
+      description: 发布新的系统公告
+      parameters:
+      - description: 公告内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreateAnnouncementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 发布成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 发布系统公告
+      tags:
+      - SuperAdmin
+  /api/v1/super/announcements/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的公告
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 删除公告
+      tags:
+      - SuperAdmin
+  /api/v1/super/announcements/review:
+    put:
+      consumes:
+      - application/json
+      description: 审核区域公告 (通过/拒绝)
+      parameters:
+      - description: 审核信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.ReviewAnnouncementRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 审核公告
+      tags:
+      - SuperAdmin
+  /api/v1/super/categories:
+    post:
+      consumes:
+      - application/json
+      description: 添加新的物品分类
+      parameters:
+      - description: 分类信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.AddCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 添加物品分类
+      tags:
+      - SuperAdmin
+  /api/v1/super/categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的物品分类
+      parameters:
+      - description: 分类ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 删除物品分类
+      tags:
+      - SuperAdmin
+  /api/v1/super/data/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: 清理指定天数前的无效数据(如已取消的帖子)
+      parameters:
+      - description: 清理参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CleanupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 清理成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 清理过期数据
+      tags:
+      - SuperAdmin
+  /api/v1/super/feedbacks:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户提交的反馈与投诉
+      parameters:
+      - description: 状态 (pending, resolved)
+        in: query
+        name: status
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取用户反馈
+      tags:
+      - SuperAdmin
+  /api/v1/super/feedbacks/{id}/reply:
+    put:
+      consumes:
+      - application/json
+      description: 管理员回复并处理反馈
+      parameters:
+      - description: 反馈ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 回复内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.ReplyFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 回复反馈
+      tags:
+      - SuperAdmin
+  /api/v1/super/stats:
+    get:
+      consumes:
+      - application/json
+      description: 超级管理员获取全局统计数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/easyfind_internal_models.SystemStats'
+              type: object
+      summary: 获取系统统计数据
+      tags:
+      - SuperAdmin
+  /api/v1/super/users:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有用户列表 (支持按角色筛选)
+      parameters:
+      - description: 角色 (1:用户, 2:管理员)
+        in: query
+        name: role
+        type: integer
+      - description: 关键词 (用户名/姓名/昵称)
+        in: query
+        name: keyword
+        type: string
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取用户列表
+      tags:
+      - SuperAdmin
+  /api/v1/super/users/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 修改账号激活状态
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.UpdateUserStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 禁用/启用账号
+      tags:
+      - SuperAdmin
+  /api/v1/super/users/admin:
+    post:
+      consumes:
+      - application/json
+      description: 创建新的失物招领管理员账号
+      parameters:
+      - description: 管理员信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 创建失物招领管理员
+      tags:
+      - SuperAdmin
+  /api/v1/upload/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传图片文件，支持自动去重，返回图片 URL
+      parameters:
+      - description: 图片文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 失败
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 上传图片
+      tags:
+      - Upload
   /api/v1/user/account:
     delete:
       consumes:

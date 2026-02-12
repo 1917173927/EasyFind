@@ -116,3 +116,38 @@ func DeleteAccount(c *gin.Context) {
 
 	response.Success(c, nil)
 }
+
+type CreateFeedbackRequest struct {
+	Type    string `json:"type" binding:"required,oneof=bug complaint suggestion"`
+	Content string `json:"content" binding:"required"`
+	Contact string `json:"contact"`
+}
+
+// CreateFeedback godoc
+// @Summary 提交反馈/投诉
+// @Description 用户提交Bug反馈或投诉建议
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param request body CreateFeedbackRequest true "反馈内容"
+// @Success 200 {object} response.Response "提交成功"
+// @Router /api/v1/feedbacks [post]
+func CreateFeedback(c *gin.Context) {
+	var req CreateFeedbackRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiErr.HandleValidatorError(c, err)
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		apiErr.HandleSysError(c, response.CodeError, nil)
+		return
+	}
+
+	if err := services.UserServiceApp.CreateFeedback(userID.(uint), req.Type, req.Content, req.Contact); err != nil {
+		apiErr.HandleSysError(c, response.ErrCreateFail, err)
+		return
+	}
+	response.Success(c, nil)
+}
