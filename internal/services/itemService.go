@@ -367,6 +367,12 @@ func ArchiveRecord(id uint, processMethod string) error {
 }
 
 func CreatClaim(claim models.Claim) error {
+	var count int64
+	database.DB.Model(&models.Item{}).Where("id = ?", claim.ItemID).Count(&count)
+	if count == 0 {
+		return errors.New("物品不存在")
+	}
+
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&claim).Error; err != nil {
 			return err

@@ -1,0 +1,30 @@
+server:
+  port: ":8080"
+  mode: "debug" # debug, release, test
+
+database:
+  mysql:
+    host: "mysql"
+    port: 3306
+    user: "root"
+    password: "coppklmja!BWZ"
+    dbname: "easyfind"
+    charset: "utf8mb4"
+    parse_time: true
+    loc: "Local"
+  redis:
+    host: "redis"
+    port: 6379
+    password: ""
+    db: 0
+
+jwt:
+  secret: "your_jwt_secret"
+  expiration_hours: 24
+
+app:
+  file_upload_path: "./uploads"
+  roles:
+    student_teacher: 1
+    lf_admin: 2
+    sys_admin: 3

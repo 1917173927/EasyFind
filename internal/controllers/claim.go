@@ -13,6 +13,10 @@ import (
 type CreatClaimRequest struct {
 	ItemID uint   `json:"item_id" binding:"required"`
 	Proof  string `json:"proof"`
+	Img1   string `json:"img1"`
+	Img2   string `json:"img2"`
+	Img3   string `json:"img3"`
+	Img4   string `json:"img4"`
 }
 
 // CreatClaim godoc
@@ -41,10 +45,18 @@ func CreatClaim(c *gin.Context) {
 		ItemID:     req.ItemID,
 		ClaimantID: userID.(uint),
 		Proof:      req.Proof,
+		Img1:       req.Img1,
+		Img2:       req.Img2,
+		Img3:       req.Img3,
+		Img4:       req.Img4,
 		Status:     string(models.StatusPending),
 	}
 
 	if err := services.CreatClaim(claim); err != nil {
+		if err.Error() == "物品不存在" {
+			apiErr.HandleBizError(c, response.ErrItemNotFound, "物品不存在")
+			return
+		}
 		apiErr.HandleSysError(c, response.ErrClaimCreateFail, err)
 		return
 	}

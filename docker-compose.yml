@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: easyfind-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/config_docker.yaml:/app/config/config.yaml
+      - ./uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - easyfind-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: easyfind-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: easyfind
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - easyfind-net
+
+  redis:
+    image: redis:7.0
+    container_name: easyfind-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - easyfind-net
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  easyfind-net:
+    driver: bridge

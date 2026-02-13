@@ -1,0 +1,18 @@
+# Ignore git files
+.git
+.gitignore
+
+# Ignore build artifacts
+main
+server.exe
+*.exe
+*.log
+
+# Ignore data directories
+mysql_data/
+redis_data/
+uploads/
+
+# Ignore docker files
+docker-compose.yml
+Dockerfile
