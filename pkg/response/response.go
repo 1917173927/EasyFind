@@ -32,6 +32,9 @@ const (
 	ErrClaimCreateFail = 30001
 	ErrClaimNotFound   = 30002
 	ErrClaimUpdateFail = 30003
+
+	ErrMessageSendFail = 40001
+	ErrMessageGetFail  = 40002
 )
 
 var MsgFlags = map[int]string{
@@ -58,6 +61,9 @@ var MsgFlags = map[int]string{
 	ErrClaimCreateFail: "申请认领失败",
 	ErrClaimNotFound:   "认领记录不存在",
 	ErrClaimUpdateFail: "更新认领状态失败",
+
+	ErrMessageSendFail: "发送消息失败",
+	ErrMessageGetFail:  "获取消息失败",
 }
 
 func GetMsg(code int) string {

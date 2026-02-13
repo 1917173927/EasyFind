@@ -3,6 +3,7 @@ package api
 import (
 	"easyfind/internal/controllers"
 	"easyfind/internal/middleware"
+	"easyfind/internal/ws"
 
 	_ "easyfind/docs"
 
@@ -33,6 +34,9 @@ func Init(r *gin.Engine) {
 		auth := api.Group("")
 		auth.Use(middleware.JWT())
 		{
+			// WebSocket 连接
+			auth.GET("/ws", ws.Connect)
+
 			// 个人信息
 			auth.POST("/logout", controllers.Logout)
 			auth.PUT("/password", controllers.UpdatePassword)
@@ -69,6 +73,12 @@ func Init(r *gin.Engine) {
 			auth.GET("/my/claims", controllers.GetMyClaim)
 			auth.GET("/claims/:id", controllers.GetClaimByID)
 			auth.PUT("/claims/:id/confirm", controllers.ConfirmClaim)
+
+			// 消息系统
+			auth.POST("/messages", controllers.SendMessage)
+			auth.GET("/messages/history", controllers.GetHistoryMessages)
+			auth.GET("/messages/chats", controllers.GetChatList)
+			auth.PUT("/messages/read", controllers.MarkMessagesAsRead)
 
 			// 图片上传
 			// auth.POST("/upload", controllers.UploadImage)
