@@ -83,7 +83,19 @@ type AdminUpdateRecordRequest struct {
 	ContactPhone string `json:"contact_phone"`
 }
 
-// AdminUpdateRecord 管理员更新Found类型的物品信息
+// AdminUpdateRecord godoc
+// @Summary 管理员更新物品
+// @Description 管理员更新Found类型物品信息，包括图片和状态
+// @Tags Admin (Item)
+// @Accept json
+// @Produce json
+// @Param id path int true "物品ID"
+// @Param request body AdminUpdateRecordRequest true "更新信息"
+// @Success 200 {object} response.Response "成功"
+// @Failure 400 {object} response.Response "参数错误"
+// @Failure 404 {object} response.Response "记录不存在"
+// @Failure 401 {object} response.Response "权限不足"
+// @Router /admin/items/{id} [put]
 func AdminUpdateRecord(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -143,7 +155,15 @@ func AdminUpdateRecord(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetSystemStatsByAdmin 管理员获取系统数据
+// GetSystemStatsByAdmin godoc
+// @Summary 获取系统统计
+// @Description 管理员获取系统总体统计数据
+// @Tags Admin (Stats)
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Response{data=services.ItemStats} "统计数据"
+// @Failure 500 {object} response.Response "系统错误"
+// @Router /admin/stats [get]
 func GetSystemStatsByAdmin(c *gin.Context) {
 	stats, err := services.GetSystemStats()
 	if err != nil {
@@ -153,7 +173,14 @@ func GetSystemStatsByAdmin(c *gin.Context) {
 	response.Success(c, stats)
 }
 
-// ExportStats 以纯文本形式导出数据
+// ExportStats godoc
+// @Summary 导出系统统计
+// @Description 导出系统统计数据为CSV文件
+// @Tags Admin (Stats)
+// @Produce text/csv
+// @Success 200 {string} string "CSV文件内容"
+// @Failure 500 {object} response.Response "系统错误"
+// @Router /admin/export [get]
 func ExportStats(c *gin.Context) {
 	stats, err := services.GetSystemStats()
 	if err != nil {

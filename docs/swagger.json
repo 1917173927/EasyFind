@@ -18,6 +18,132 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
+        "/admin/export": {
+            "get": {
+                "description": "导出系统统计数据为CSV文件",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "Admin (Stats)"
+                ],
+                "summary": "导出系统统计",
+                "responses": {
+                    "200": {
+                        "description": "CSV文件内容",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "系统错误",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/items/{id}": {
+            "put": {
+                "description": "管理员更新Found类型物品信息，包括图片和状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Item)"
+                ],
+                "summary": "管理员更新物品",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.AdminUpdateRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats": {
+            "get": {
+                "description": "管理员获取系统总体统计数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin (Stats)"
+                ],
+                "summary": "获取系统统计",
+                "responses": {
+                    "200": {
+                        "description": "统计数据",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/easyfind_internal_services.ItemStats"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "系统错误",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/announcements": {
             "post": {
                 "description": "管理员发布区域公告，状态默认为 pending",
@@ -513,6 +639,40 @@
                 "responses": {
                     "200": {
                         "description": "确认成功",
+                        "schema": {
+                            "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/feedbacks": {
+            "post": {
+                "description": "用户提交Bug反馈或投诉建议",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "提交反馈/投诉",
+                "parameters": [
+                    {
+                        "description": "反馈内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.CreateFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
                         "schema": {
                             "$ref": "#/definitions/easyfind_pkg_response.Response"
                         }
@@ -2092,6 +2252,32 @@
                 "RoleSysAdmin"
             ]
         },
+        "easyfind_internal_services.ItemStats": {
+            "type": "object",
+            "properties": {
+                "archived": {
+                    "type": "integer"
+                },
+                "archived_rate": {
+                    "type": "number"
+                },
+                "claimed": {
+                    "type": "integer"
+                },
+                "claimed_rate": {
+                    "type": "number"
+                },
+                "matched": {
+                    "type": "integer"
+                },
+                "matched_rate": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "easyfind_pkg_response.Response": {
             "type": "object",
             "properties": {
@@ -2125,6 +2311,47 @@
             ],
             "properties": {
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.AdminUpdateRecordRequest": {
+            "type": "object",
+            "properties": {
+                "campus": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "contact_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "img1": {
+                    "type": "string"
+                },
+                "img2": {
+                    "type": "string"
+                },
+                "img3": {
+                    "type": "string"
+                },
+                "img4": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -2208,6 +2435,29 @@
                 "type": {
                     "description": "global or region",
                     "type": "string"
+                }
+            }
+        },
+        "internal_controllers.CreateFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "type"
+            ],
+            "properties": {
+                "contact": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "bug",
+                        "complaint",
+                        "suggestion"
+                    ]
                 }
             }
         },

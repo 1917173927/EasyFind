@@ -201,6 +201,23 @@ definitions:
     - RoleStudentTeacher
     - RoleLFAdmin
     - RoleSysAdmin
+  easyfind_internal_services.ItemStats:
+    properties:
+      archived:
+        type: integer
+      archived_rate:
+        type: number
+      claimed:
+        type: integer
+      claimed_rate:
+        type: number
+      matched:
+        type: integer
+      matched_rate:
+        type: number
+      total:
+        type: integer
+    type: object
   easyfind_pkg_response.Response:
     properties:
       code:
@@ -224,6 +241,33 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  internal_controllers.AdminUpdateRecordRequest:
+    properties:
+      campus:
+        type: string
+      category:
+        type: string
+      contact_name:
+        type: string
+      contact_phone:
+        type: string
+      description:
+        type: string
+      img1:
+        type: string
+      img2:
+        type: string
+      img3:
+        type: string
+      img4:
+        type: string
+      location:
+        type: string
+      time:
+        type: string
+      title:
+        type: string
     type: object
   internal_controllers.ArchiveRecordRequest:
     properties:
@@ -279,6 +323,22 @@ definitions:
     required:
     - content
     - title
+    type: object
+  internal_controllers.CreateFeedbackRequest:
+    properties:
+      contact:
+        type: string
+      content:
+        type: string
+      type:
+        enum:
+        - bug
+        - complaint
+        - suggestion
+        type: string
+    required:
+    - content
+    - type
     type: object
   internal_controllers.CreateRecordRequest:
     properties:
@@ -477,6 +537,86 @@ info:
   title: EasyFind API
   version: "1.0"
 paths:
+  /admin/export:
+    get:
+      description: 导出系统统计数据为CSV文件
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV文件内容
+          schema:
+            type: string
+        "500":
+          description: 系统错误
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 导出系统统计
+      tags:
+      - Admin (Stats)
+  /admin/items/{id}:
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新Found类型物品信息，包括图片和状态
+      parameters:
+      - description: 物品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.AdminUpdateRecordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+        "401":
+          description: 权限不足
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+        "404":
+          description: 记录不存在
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 管理员更新物品
+      tags:
+      - Admin (Item)
+  /admin/stats:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取系统总体统计数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 统计数据
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/easyfind_internal_services.ItemStats'
+              type: object
+        "500":
+          description: 系统错误
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 获取系统统计
+      tags:
+      - Admin (Stats)
   /api/v1/admin/announcements:
     post:
       consumes:
@@ -795,6 +935,28 @@ paths:
       summary: 确认认领
       tags:
       - Claim (User)
+  /api/v1/feedbacks:
+    post:
+      consumes:
+      - application/json
+      description: 用户提交Bug反馈或投诉建议
+      parameters:
+      - description: 反馈内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.CreateFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 提交成功
+          schema:
+            $ref: '#/definitions/easyfind_pkg_response.Response'
+      summary: 提交反馈/投诉
+      tags:
+      - User
   /api/v1/items:
     get:
       consumes:
