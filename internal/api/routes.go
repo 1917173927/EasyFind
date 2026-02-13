@@ -90,6 +90,7 @@ func Init(r *gin.Engine) {
 		{
 			// 物品管理
 			admin.GET("/items", controllers.GetRecordByAdmin)
+			admin.PUT("/items/:id", controllers.AdminUpdateRecord)
 			admin.GET("/items/pending", controllers.GetPendingRecordByAdmin)
 			admin.PUT("/items/:id/approve", controllers.ApproveRecord)
 			admin.PUT("/items/:id/reject", controllers.RejectRecord)
@@ -99,6 +100,10 @@ func Init(r *gin.Engine) {
 			admin.GET("/claims/pending", controllers.GetPendingClaimByAdmin)
 			admin.PUT("/claims/:id/approve", controllers.ApproveClaim)
 			admin.PUT("/claims/:id/reject", controllers.RejectClaim)
+
+			// 统计与导出
+			admin.GET("/stats", controllers.GetSystemStatsByAdmin)
+			admin.GET("/export", controllers.ExportStats)
 
 			// 公告管理 (Role 2 only creates pending regional announcements)
 			admin.POST("/announcements", controllers.CreateRegionalAnnouncement)

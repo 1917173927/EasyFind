@@ -1,13 +1,12 @@
 package services
 
 import (
-	"errors"
-	"os"
-	"strings"
-
 	"easyfind/internal/config"
 	"easyfind/internal/models"
 	"easyfind/pkg/database"
+	"errors"
+	"os"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -482,4 +481,42 @@ func ConfirmClaim(id uint) error {
 
 		return nil
 	})
+}
+
+// ItemStats 统计数据结构
+type ItemStats struct {
+	Total        int64   `json:"total"`
+	Matched      int64   `json:"matched"`
+	MatchedRate  float64 `json:"matched_rate"`
+	Claimed      int64   `json:"claimed"`
+	ClaimedRate  float64 `json:"claimed_rate"`
+	Archived     int64   `json:"archived"`
+	ArchivedRate float64 `json:"archived_rate"`
+}
+
+// GetSystemStats 获取系统统计数据
+func GetSystemStats() (*ItemStats, error) {
+	var stats ItemStats
+
+	err := database.DB.Model(&models.Item{}).
+		Select(`
+			COUNT(*) as total,
+			SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as matched,
+			SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as claimed,
+			SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as archived
+		`, models.StatusMatched, models.StatusClaimed, models.StatusArchived).
+		Where("status != ?", models.StatusCancelled).
+		Scan(&stats).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if stats.Total > 0 {
+		stats.MatchedRate = float64(stats.Matched) / float64(stats.Total)
+		stats.ClaimedRate = float64(stats.Claimed) / float64(stats.Total)
+		stats.ArchivedRate = float64(stats.Archived) / float64(stats.Total)
+	}
+
+	return &stats, nil
 }

@@ -2,9 +2,13 @@ package controllers
 
 import (
 	"easyfind/internal/apiErr"
+	"easyfind/internal/models"
 	"easyfind/internal/services"
 	"easyfind/pkg/response"
+	"encoding/csv"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -62,6 +66,124 @@ func GetRecordByAdmin(c *gin.Context) {
 		"list":  records,
 		"total": total,
 	})
+}
+
+type AdminUpdateRecordRequest struct {
+	Title        string `json:"title"`
+	Campus       string `json:"campus"`
+	Category     string `json:"category"`
+	Location     string `json:"location"`
+	Time         string `json:"time"`
+	Description  string `json:"description"`
+	Img1         string `json:"img1"`
+	Img2         string `json:"img2"`
+	Img3         string `json:"img3"`
+	Img4         string `json:"img4"`
+	ContactName  string `json:"contact_name"`
+	ContactPhone string `json:"contact_phone"`
+}
+
+// AdminUpdateRecord 管理员更新Found类型的物品信息
+func AdminUpdateRecord(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		apiErr.HandleBizError(c, response.InvalidParams, "ID格式错误")
+		return
+	}
+
+	var req AdminUpdateRecordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiErr.HandleValidatorError(c, err)
+		return
+	}
+
+	oldRecord, err := services.GetRecordById(uint(id))
+	if err != nil {
+		apiErr.HandleBizError(c, response.ErrItemNotFound, "记录不存在")
+		return
+	}
+	if oldRecord.Type != models.TypeFound {
+		apiErr.HandleBizError(c, response.ErrNoPerMission, "只能修改招领信息")
+		return
+	}
+
+	services.RemoveImg(oldRecord, req.Img1, req.Img2, req.Img3, req.Img4)
+
+	var t time.Time
+	if req.Time != "" {
+		var err error
+		t, err = time.ParseInLocation("2006-01-02 15:04:05", req.Time, time.Local)
+		if err != nil {
+			apiErr.HandleBizError(c, response.InvalidParams, "时间格式错误")
+			return
+		}
+	}
+
+	item := models.Item{
+		Title:        req.Title,
+		Campus:       req.Campus,
+		Category:     req.Category,
+		Location:     req.Location,
+		Time:         t,
+		Description:  req.Description,
+		Img1:         req.Img1,
+		Img2:         req.Img2,
+		Img3:         req.Img3,
+		Img4:         req.Img4,
+		ContactName:  req.ContactName,
+		ContactPhone: req.ContactPhone,
+	}
+
+	if err := services.UpdateRecord(id, item); err != nil {
+		apiErr.HandleSysError(c, response.ErrItemUpdateFali, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// GetSystemStatsByAdmin 管理员获取系统数据
+func GetSystemStatsByAdmin(c *gin.Context) {
+	stats, err := services.GetSystemStats()
+	if err != nil {
+		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
+		return
+	}
+	response.Success(c, stats)
+}
+
+// ExportStats 以纯文本形式导出数据
+func ExportStats(c *gin.Context) {
+	stats, err := services.GetSystemStats()
+	if err != nil {
+		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
+		return
+	}
+
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment;filename=stats.csv")
+	c.Header("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(c.Writer)
+	err = writer.Write([]string{"总发布量", "匹配数量", "匹配率", "认领数量", "认领率", "归档数量", "归档率"})
+	if err != nil {
+		return
+	}
+
+	err = writer.Write([]string{
+		fmt.Sprintf("%d", stats.Total),
+		fmt.Sprintf("%d", stats.Matched),
+		fmt.Sprintf("%.2f%%", stats.MatchedRate*100),
+		fmt.Sprintf("%d", stats.Claimed),
+		fmt.Sprintf("%.2f%%", stats.ClaimedRate*100),
+		fmt.Sprintf("%d", stats.Archived),
+		fmt.Sprintf("%.2f%%", stats.ArchivedRate*100),
+	})
+	if err != nil {
+		return
+	}
+	writer.Flush()
 }
 
 type GetPendingRecordByAdminRequest struct {
