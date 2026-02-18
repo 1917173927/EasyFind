@@ -194,3 +194,43 @@ func ConfirmClaim(c *gin.Context) {
 
 	response.Success(c, nil)
 }
+
+// GetClaimRejectReason godoc
+// @Summary 查看认领驳回原因
+// @Description 查看当前用户某条被驳回认领申请的驳回原因
+// @Tags Claim (User)
+// @Accept json
+// @Produce json
+// @Param id path int true "认领ID"
+// @Success 200 {object} response.Response{data=map[string]string} "获取成功"
+// @Router /api/v1/claims/{id}/reason [get]
+func GetClaimRejectReason(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		apiErr.HandleBizError(c, response.InvalidParams, "ID格式错误")
+		return
+	}
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		apiErr.HandleBizError(c, response.ErrTokenInvalid, "未获取到用户信息")
+		return
+	}
+
+	reason, err := services.GetClaimRejectReason(uint(id), userID.(uint))
+	if err != nil {
+		if err.Error() == "无权查看此记录" {
+			apiErr.HandleBizError(c, response.ErrNoPerMission, "无权查看此记录")
+			return
+		}
+		if err.Error() == "该认领申请不是驳回状态" {
+			apiErr.HandleBizError(c, response.InvalidParams, "该认领申请不是驳回状态")
+			return
+		}
+		apiErr.HandleBizError(c, response.ErrClaimNotFound, "认领记录不存在")
+		return
+	}
+
+	response.Success(c, gin.H{"reject_reason": reason})
+}

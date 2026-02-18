@@ -408,6 +408,68 @@ func GetMyClaimTotalPageNum(ClaimantID uint) (*int64, error) {
 	return &pageNum, nil
 }
 
+func GetClaimProgress(ClaimantID uint, pageNum, pageSize int) ([]models.ClaimProgress, int64, error) {
+	var claims []models.Claim
+	var total int64
+
+	query := database.DB.Model(&models.Claim{}).Where("claimant_id = ?", ClaimantID)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Preload("Item").
+		Order("updated_at desc").
+		Limit(pageSize).Offset((pageNum - 1) * pageSize).
+		Find(&claims).Error; err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]models.ClaimProgress, 0, len(claims))
+	for _, claim := range claims {
+		typeVal := models.ClaimProgressTypePending
+		title := "你的认领申请待审核"
+		hint := "请耐心等待管理员审核"
+		actionText := ""
+
+		switch strings.ToLower(claim.Status) {
+		case string(models.StatusApproved):
+			typeVal = models.ClaimProgressTypeApproved
+			title = "你的认领申请已通过!"
+			hint = ""
+			actionText = "点此与对方进行沟通"
+		case string(models.StatusRejected):
+			typeVal = models.ClaimProgressTypeRejected
+			title = "你的认领申请不通过"
+			hint = "请认真填写相关细节和更多物品特征"
+			actionText = "点此查看原因"
+		case string(models.StatusArchived):
+			typeVal = models.ClaimProgressTypeCompleted
+			title = "你的认领流程已完成"
+			hint = ""
+			actionText = ""
+		}
+
+		result = append(result, models.ClaimProgress{
+			Type:         typeVal,
+			Title:        title,
+			Hint:         hint,
+			ActionText:   actionText,
+			Time:         claim.UpdatedAt,
+			ClaimID:      claim.ID,
+			ItemID:       claim.ItemID,
+			PeerUserID:   claim.Item.PublisherID,
+			ItemName:     claim.Item.Title,
+			LossTime:     claim.Item.Time,
+			Location:     claim.Item.Location,
+			Img:          claim.Item.Img1,
+			ClaimStatus:  strings.ToLower(claim.Status),
+			RejectReason: claim.RejectReason,
+		})
+	}
+
+	return result, total, nil
+}
+
 func GetPendingClaimByAdmin(pageNum, pageSize int) ([]models.Claim, error) {
 	var claims []models.Claim
 	result := database.DB.Model(&models.Claim{}).
@@ -460,13 +522,33 @@ func ApproveClaim(id uint) error {
 	return nil
 }
 
-func RejectClaim(id uint) error {
+func RejectClaim(id uint, rejectReason string) error {
 	result := database.DB.Model(models.Claim{}).Where("id = ?", id).
-		Update("status", models.StatusRejected)
+		Updates(map[string]interface{}{
+			"status":        models.StatusRejected,
+			"reject_reason": rejectReason,
+		})
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
+}
+
+func GetClaimRejectReason(claimID uint, userID uint) (string, error) {
+	var claim models.Claim
+	if err := database.DB.First(&claim, claimID).Error; err != nil {
+		return "", err
+	}
+
+	if claim.ClaimantID != userID {
+		return "", errors.New("无权查看此记录")
+	}
+
+	if strings.ToLower(claim.Status) != string(models.StatusRejected) {
+		return "", errors.New("该认领申请不是驳回状态")
+	}
+
+	return claim.RejectReason, nil
 }
 
 func ConfirmClaim(id uint) error {

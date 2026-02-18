@@ -431,6 +431,10 @@ func ApproveClaim(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+type RejectClaimRequest struct {
+	RejectReason string `json:"reject_reason" binding:"required"`
+}
+
 // RejectClaim godoc
 // @Summary 驳回认领申请
 // @Description 管理员驳回认领申请
@@ -438,6 +442,7 @@ func ApproveClaim(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "认领ID"
+// @Param request body RejectClaimRequest true "驳回理由"
 // @Success 200 {object} response.Response "操作成功"
 // @Router /api/v1/admin/claims/{id}/reject [put]
 func RejectClaim(c *gin.Context) {
@@ -448,7 +453,13 @@ func RejectClaim(c *gin.Context) {
 		return
 	}
 
-	if err := services.RejectClaim(uint(id)); err != nil {
+	var req RejectClaimRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiErr.HandleValidatorError(c, err)
+		return
+	}
+
+	if err := services.RejectClaim(uint(id), req.RejectReason); err != nil {
 		apiErr.HandleSysError(c, response.ErrClaimUpdateFail, err)
 		return
 	}

@@ -150,6 +150,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/activities": {
+            "get": {
+                "description": "获取当前用户帖子动态（按时间倒序）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity (User)"
+                ],
+                "summary": "获取帖子动态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/announcements": {
             "post": {
                 "description": "管理员发布区域公告，状态默认为 pending",
@@ -286,6 +336,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "驳回理由",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.RejectClaimRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -576,6 +635,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/claims/progress": {
+            "get": {
+                "description": "获取当前用户的招领进度（按最新时间倒序）。type: claim_pending|claim_approved|claim_rejected|claim_completed；claim_status: pending|approved|rejected|archived",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "获取招领进度",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_num",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/claims/{id}": {
             "get": {
                 "description": "根据ID获取认领详情 (发布者和申请者可见)",
@@ -647,6 +756,53 @@ const docTemplate = `{
                         "description": "确认成功",
                         "schema": {
                             "$ref": "#/definitions/easyfind_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/claims/{id}/reason": {
+            "get": {
+                "description": "查看当前用户某条被驳回认领申请的驳回原因",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Claim (User)"
+                ],
+                "summary": "查看认领驳回原因",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "认领ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/easyfind_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -2042,6 +2198,22 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "img1": {
+                    "description": "证明图片1",
+                    "type": "string"
+                },
+                "img2": {
+                    "description": "证明图片2",
+                    "type": "string"
+                },
+                "img3": {
+                    "description": "证明图片3",
+                    "type": "string"
+                },
+                "img4": {
+                    "description": "证明图片4",
+                    "type": "string"
+                },
                 "item": {
                     "$ref": "#/definitions/easyfind_internal_models.Item"
                 },
@@ -2049,7 +2221,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "proof": {
-                    "description": "证明材料 (如图片URL)",
+                    "description": "证明材料 (文字描述或主要图片)",
+                    "type": "string"
+                },
+                "reject_reason": {
+                    "description": "认领驳回原因",
                     "type": "string"
                 },
                 "status": {
@@ -2391,6 +2567,18 @@ const docTemplate = `{
                 "item_id"
             ],
             "properties": {
+                "img1": {
+                    "type": "string"
+                },
+                "img2": {
+                    "type": "string"
+                },
+                "img3": {
+                    "type": "string"
+                },
+                "img4": {
+                    "type": "string"
+                },
                 "item_id": {
                     "type": "integer"
                 },
@@ -2602,6 +2790,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.RejectClaimRequest": {
+            "type": "object",
+            "required": [
+                "reject_reason"
+            ],
+            "properties": {
+                "reject_reason": {
                     "type": "string"
                 }
             }

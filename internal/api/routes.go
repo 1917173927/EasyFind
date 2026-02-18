@@ -71,8 +71,13 @@ func Init(r *gin.Engine) {
 			// 我的认领管理
 			auth.POST("/claims", controllers.CreatClaim)
 			auth.GET("/my/claims", controllers.GetMyClaim)
+			auth.GET("/claims/progress", controllers.GetClaimProgress)
+			auth.GET("/claims/:id/reason", controllers.GetClaimRejectReason)
 			auth.GET("/claims/:id", controllers.GetClaimByID)
 			auth.PUT("/claims/:id/confirm", controllers.ConfirmClaim)
+
+			// 帖子动态
+			auth.GET("/activities", controllers.GetPostActivities)
 
 			// 消息系统
 			auth.POST("/messages", controllers.SendMessage)

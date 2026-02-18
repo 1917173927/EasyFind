@@ -46,12 +46,27 @@ definitions:
         $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: integer
+      img1:
+        description: 证明图片1
+        type: string
+      img2:
+        description: 证明图片2
+        type: string
+      img3:
+        description: 证明图片3
+        type: string
+      img4:
+        description: 证明图片4
+        type: string
       item:
         $ref: '#/definitions/easyfind_internal_models.Item'
       item_id:
         type: integer
       proof:
-        description: 证明材料 (如图片URL)
+        description: 证明材料 (文字描述或主要图片)
+        type: string
+      reject_reason:
+        description: 认领驳回原因
         type: string
       status:
         description: '状态: pending/approved/rejected/archived'
@@ -286,6 +301,14 @@ definitions:
     type: object
   internal_controllers.CreatClaimRequest:
     properties:
+      img1:
+        type: string
+      img2:
+        type: string
+      img3:
+        type: string
+      img4:
+        type: string
       item_id:
         type: integer
       proof:
@@ -434,6 +457,13 @@ definitions:
     - password
     - role
     - username
+    type: object
+  internal_controllers.RejectClaimRequest:
+    properties:
+      reject_reason:
+        type: string
+    required:
+    - reject_reason
     type: object
   internal_controllers.RejectRecordRequest:
     properties:
@@ -617,6 +647,36 @@ paths:
       summary: 获取系统统计
       tags:
       - Admin (Stats)
+  /api/v1/activities:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户帖子动态（按时间倒序）
+      parameters:
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取帖子动态
+      tags:
+      - Activity (User)
   /api/v1/admin/announcements:
     post:
       consumes:
@@ -671,6 +731,12 @@ paths:
         name: id
         required: true
         type: integer
+      - description: 驳回理由
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers.RejectClaimRequest'
       produces:
       - application/json
       responses:
@@ -933,6 +999,65 @@ paths:
           schema:
             $ref: '#/definitions/easyfind_pkg_response.Response'
       summary: 确认认领
+      tags:
+      - Claim (User)
+  /api/v1/claims/{id}/reason:
+    get:
+      consumes:
+      - application/json
+      description: 查看当前用户某条被驳回认领申请的驳回原因
+      parameters:
+      - description: 认领ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: 查看认领驳回原因
+      tags:
+      - Claim (User)
+  /api/v1/claims/progress:
+    get:
+      consumes:
+      - application/json
+      description: '获取当前用户的招领进度（按最新时间倒序）。type: claim_pending|claim_approved|claim_rejected|claim_completed；claim_status:
+        pending|approved|rejected|archived'
+      parameters:
+      - description: 页码
+        in: query
+        name: page_num
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/easyfind_pkg_response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+      summary: 获取招领进度
       tags:
       - Claim (User)
   /api/v1/feedbacks:

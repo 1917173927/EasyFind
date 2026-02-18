@@ -63,6 +63,7 @@ type Claim struct {
 	Img2       string  `json:"img2"`                            // 证明图片2
 	Img3       string  `json:"img3"`                            // 证明图片3
 	Img4       string  `json:"img4"`                            // 证明图片4
+	RejectReason string `json:"reject_reason"`                  // 认领驳回原因
 }
 
 type LostCategory struct {
