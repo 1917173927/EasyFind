@@ -5,6 +5,7 @@ import (
 	"easyfind/pkg/database"
 	"easyfind/pkg/utils"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -38,6 +39,12 @@ func (s *AuthService) Login(username, password string, role int) (string, error)
 	token, err := utils.GenerateToken(account.ID, account.Username, int(account.Role))
 	if err != nil {
 		return "", errors.New("生成令牌失败")
+	}
+
+	now := time.Now()
+	if err := database.DB.Model(&models.Account{}).Where("id = ?", account.ID).
+		Updates(map[string]interface{}{"last_login_at": now, "first_login": false}).Error; err != nil {
+		return "", err
 	}
 
 	return token, nil

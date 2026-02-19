@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -14,15 +16,16 @@ const (
 
 type Account struct {
 	gorm.Model
-	Username   string   `gorm:"type:varchar(191);uniqueIndex;not null" json:"username"` // 学号或工号
-	Password   string   `gorm:"not null" json:"-"`
-	Role       UserRole `gorm:"default:1" json:"role"` // 1:学生/老师, 2:失物招领管理员, 3:系统管理员
-	Name       string   `json:"name"`
-	Nickname   string   `json:"nickname"`                             // 昵称
-	Avatar     string   `gorm:"default:'default.jpeg'" json:"avatar"` // 头像
-	Phone      string   `json:"phone"`
-	IsActive   bool     `gorm:"default:true" json:"is_active"` //账号是否被封号（被管理员拿下）
-	FirstLogin bool     `gorm:"default:true" json:"first_login"` // 是否首次登录
+	Username    string     `gorm:"type:varchar(191);uniqueIndex;not null" json:"username"` // 学号或工号
+	Password    string     `gorm:"not null" json:"-"`
+	Role        UserRole   `gorm:"default:1" json:"role"` // 1:学生/老师, 2:失物招领管理员, 3:系统管理员
+	Name        string     `json:"name"`
+	Nickname    string     `json:"nickname"`                             // 昵称
+	Avatar      string     `gorm:"default:'default.jpeg'" json:"avatar"` // 头像
+	Phone       string     `json:"phone"`
+	IsActive    bool       `gorm:"default:true" json:"is_active"`   //账号是否被封号（被管理员拿下）
+	FirstLogin  bool       `gorm:"default:true" json:"first_login"` // 是否首次登录
+	LastLoginAt *time.Time `json:"last_login_at"`                   // 最后登录时间（未登录过为null）
 }
 
 // TableName overrides the table name used by User to `profiles`

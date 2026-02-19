@@ -2153,6 +2153,10 @@ const docTemplate = `{
                     "description": "账号是否被封号（被管理员拿下）",
                     "type": "boolean"
                 },
+                "last_login_at": {
+                    "description": "最后登录时间（未登录过为null）",
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },

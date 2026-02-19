@@ -6,6 +6,7 @@ import (
 	"easyfind/internal/services"
 	"easyfind/pkg/response"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,9 @@ func GetAllItem(c *gin.Context) {
 	if err := c.ShouldBindQuery(&req); err != nil {
 		apiErr.HandleValidatorError(c, err)
 		return
+	}
+	if strings.TrimSpace(c.Query("has_bounty")) == "" {
+		req.HasBounty = nil
 	}
 
 	if req.PageNum <= 0 {
@@ -104,6 +108,9 @@ func GetRecord(c *gin.Context) {
 	if err := c.ShouldBindQuery(&req); err != nil {
 		apiErr.HandleValidatorError(c, err)
 		return
+	}
+	if strings.TrimSpace(c.Query("has_bounty")) == "" {
+		req.HasBounty = nil
 	}
 
 	if req.PageNum <= 0 {

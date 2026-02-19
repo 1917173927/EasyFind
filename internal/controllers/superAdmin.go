@@ -47,7 +47,7 @@ type GetUserListRequest struct {
 // @Tags SuperAdmin
 // @Accept json
 // @Produce json
-// @Param role query int false "角色 (1:用户, 2:管理员)"
+// @Param role query int false "角色 (1:学生/老师, 2:管理员, 3:超级管理员)"
 // @Param keyword query string false "关键词 (用户名/姓名/昵称)"
 // @Param page_num query int false "页码"
 // @Param page_size query int false "每页数量"

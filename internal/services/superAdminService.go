@@ -10,6 +10,20 @@ import (
 
 type SuperAdminService struct{}
 
+type UserListItem struct {
+	ID          uint       `json:"ID"`
+	Username    string     `json:"username"`
+	Role        int        `json:"role"`
+	RoleName    string     `json:"role_name"`
+	Name        string     `json:"name"`
+	Nickname    string     `json:"nickname"`
+	Phone       string     `json:"phone"`
+	Avatar      string     `json:"avatar"`
+	IsActive    bool       `json:"is_active"`
+	CreatedAt   time.Time  `json:"CreatedAt"`
+	LastLoginAt *time.Time `json:"last_login_at"`
+}
+
 var SuperAdminServiceApp = new(SuperAdminService)
 
 // --- 统计数据 ---
@@ -39,7 +53,7 @@ func (s *SuperAdminService) GetSystemStats() (*models.SystemStats, error) {
 
 // --- 用户管理 ---
 
-func (s *SuperAdminService) GetUserList(role int, keyword string, pageNum, pageSize int) ([]models.Account, int64, error) {
+func (s *SuperAdminService) GetUserList(role int, keyword string, pageNum, pageSize int) ([]UserListItem, int64, error) {
 	var users []models.Account
 	var total int64
 
@@ -56,12 +70,40 @@ func (s *SuperAdminService) GetUserList(role int, keyword string, pageNum, pageS
 		return nil, 0, err
 	}
 
-	err := query.Select("id, username, role, name, nickname, phone, is_active, created_at, avatar").
+	err := query.Select("id, username, role, name, nickname, phone, is_active, created_at, avatar, last_login_at").
 		Limit(pageSize).Offset((pageNum - 1) * pageSize).
 		Order("created_at desc").
 		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
 
-	return users, total, err
+	list := make([]UserListItem, 0, len(users))
+	for _, user := range users {
+		roleName := "学生/老师"
+		switch user.Role {
+		case models.RoleLFAdmin:
+			roleName = "管理员"
+		case models.RoleSysAdmin:
+			roleName = "超级管理员"
+		}
+
+		list = append(list, UserListItem{
+			ID:          user.ID,
+			Username:    user.Username,
+			Role:        int(user.Role),
+			RoleName:    roleName,
+			Name:        user.Name,
+			Nickname:    user.Nickname,
+			Phone:       user.Phone,
+			Avatar:      user.Avatar,
+			IsActive:    user.IsActive,
+			CreatedAt:   user.CreatedAt,
+			LastLoginAt: user.LastLoginAt,
+		})
+	}
+
+	return list, total, nil
 }
 
 func (s *SuperAdminService) UpdateUserStatus(id uint, isActive bool) error {

@@ -47,22 +47,6 @@ func buildCommonQuery(campus, category, status, location string, days int, hasBo
 
 	if status != "" && strings.ToLower(status) != "all" {
 		query = query.Where("status = ?", status)
-	} else {
-		// 默认只显示已审核通过的，除非明确指定了其他状态，或者后台管理接口可能会覆盖这个逻辑
-		// 这里改为：如果 status 为空，默认 status = 'approved'。
-		// 但为了兼容原来的逻辑（IsBounty修改前是 buildCommonQuery(campus, category, string(models.StatusApproved))）
-		// 我们需要小心。调用者一般会传入 status。
-		// 如果调用者传空字符串，以前是 "!= Cancelled AND != Archived"。
-		// 现在的需求是"按物品状态筛选"。
-		// 假如用户没传 status，默认应该展示 approved。
-		// 如果用户传了 status，就按 status 查。
-		// 之前的调用者传了 `string(models.StatusApproved)`。
-		// 所以如果 status 是 "approved"，就是 status = 'approved'。
-
-		// 保持原有逻辑：如果 status 不为空，就用 status。
-		// 如果 status 为空，保留原来的排除逻辑？
-		// 原来 logic: if status != "" -> Where("status = ?", status) else -> Where("status != ? ...")
-		query = query.Where("status != ? AND status != ?", models.StatusCancelled, models.StatusArchived)
 	}
 
 	return query
@@ -70,10 +54,6 @@ func buildCommonQuery(campus, category, status, location string, days int, hasBo
 
 func GetAllItem(campus, category, location string, days int, status string, hasBounty *bool, pageNum, pageSize int) ([]models.Item, error) {
 	var record []models.Item
-	// 如果 status 为空，默认只查 approved
-	if status == "" {
-		status = string(models.StatusApproved)
-	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Limit(pageSize).Offset((pageNum - 1) * pageSize).
@@ -86,9 +66,6 @@ func GetAllItem(campus, category, location string, days int, status string, hasB
 
 func GetRecord(campus, category string, lostOrFound int, location string, days int, status string, hasBounty *bool, pageNum, pageSize int) ([]models.Item, error) {
 	var record []models.Item
-	if status == "" {
-		status = string(models.StatusApproved)
-	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	if lostOrFound != 0 {
@@ -105,9 +82,6 @@ func GetRecord(campus, category string, lostOrFound int, location string, days i
 
 func GetAllLostAndFoundTotalPageNum(campus, category, location string, days int, status string, hasBounty *bool) (*int64, error) {
 	var pageNum int64
-	if status == "" {
-		status = string(models.StatusApproved)
-	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	result := query.Count(&pageNum)
@@ -119,9 +93,6 @@ func GetAllLostAndFoundTotalPageNum(campus, category, location string, days int,
 
 func GetTotalPageNum(campus, category string, lostOrFound int, location string, days int, status string, hasBounty *bool) (*int64, error) {
 	var pageNum int64
-	if status == "" {
-		status = string(models.StatusApproved)
-	}
 	query := buildCommonQuery(campus, category, status, location, days, hasBounty)
 
 	if lostOrFound != 0 {
