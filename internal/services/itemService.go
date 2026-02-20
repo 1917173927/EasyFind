@@ -3,6 +3,7 @@ package services
 import (
 	"easyfind/internal/config"
 	"easyfind/internal/models"
+	"easyfind/internal/ws"
 	"easyfind/pkg/database"
 	"errors"
 	"os"
@@ -305,15 +306,26 @@ func CancelRecord(id uint) error {
 }
 
 func ApproveRecord(id uint) error {
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, id).Error; err != nil {
+		return err
+	}
+
 	result := database.DB.Model(models.Item{}).Where("id = ?", id).
 		Update("status", models.StatusApproved)
 	if result.Error != nil {
 		return result.Error
 	}
+	_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
 	return nil
 }
 
 func RejectRecord(id uint, rejectReason string) error {
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, id).Error; err != nil {
+		return err
+	}
+
 	result := database.DB.Model(models.Item{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status":        models.StatusRejected,
@@ -322,10 +334,16 @@ func RejectRecord(id uint, rejectReason string) error {
 	if result.Error != nil {
 		return result.Error
 	}
+	_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
 	return nil
 }
 
 func ArchiveRecord(id uint, processMethod string) error {
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, id).Error; err != nil {
+		return err
+	}
+
 	result := database.DB.Model(&models.Item{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status":         models.StatusArchived,
@@ -334,6 +352,7 @@ func ArchiveRecord(id uint, processMethod string) error {
 	if result.Error != nil {
 		return result.Error
 	}
+	_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
 	return nil
 }
 
@@ -344,7 +363,7 @@ func CreatClaim(claim models.Claim) error {
 		return errors.New("物品不存在")
 	}
 
-	return database.DB.Transaction(func(tx *gorm.DB) error {
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&claim).Error; err != nil {
 			return err
 		}
@@ -356,6 +375,17 @@ func CreatClaim(claim models.Claim) error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, claim.ItemID).Error; err == nil {
+		_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
+	}
+	_ = ws.PushUpdate(claim.ClaimantID, ws.ScopeClaimProgress, nil, claim.ID)
+
+	return nil
 }
 
 func GetMyClaim(ClaimantID uint, pageNum, pageSize int) ([]models.Claim, error) {
@@ -485,15 +515,30 @@ func GetClaimByID(id uint) (models.Claim, error) {
 }
 
 func ApproveClaim(id uint) error {
+	var claim models.Claim
+	if err := database.DB.Select("id, item_id, claimant_id").First(&claim, id).Error; err != nil {
+		return err
+	}
+
 	result := database.DB.Model(models.Claim{}).Where("id = ?", id).
 		Update("status", models.StatusApproved)
 	if result.Error != nil {
 		return result.Error
 	}
+	_ = ws.PushUpdate(claim.ClaimantID, ws.ScopeClaimProgress, nil, claim.ID)
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, claim.ItemID).Error; err == nil {
+		_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
+	}
 	return nil
 }
 
 func RejectClaim(id uint, rejectReason string) error {
+	var claim models.Claim
+	if err := database.DB.Select("id, item_id, claimant_id").First(&claim, id).Error; err != nil {
+		return err
+	}
+
 	result := database.DB.Model(models.Claim{}).Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"status":        models.StatusRejected,
@@ -502,6 +547,7 @@ func RejectClaim(id uint, rejectReason string) error {
 	if result.Error != nil {
 		return result.Error
 	}
+	_ = ws.PushUpdate(claim.ClaimantID, ws.ScopeClaimProgress, nil, claim.ID)
 	return nil
 }
 
@@ -523,11 +569,13 @@ func GetClaimRejectReason(claimID uint, userID uint) (string, error) {
 }
 
 func ConfirmClaim(id uint) error {
-	return database.DB.Transaction(func(tx *gorm.DB) error {
+	var claimSnapshot models.Claim
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		var claim models.Claim
 		if err := tx.First(&claim, id).Error; err != nil {
 			return err
 		}
+		claimSnapshot = claim
 
 		if err := tx.Model(&claim).Update("status", models.StatusArchived).Error; err != nil {
 			return err
@@ -540,6 +588,17 @@ func ConfirmClaim(id uint) error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	_ = ws.PushUpdate(claimSnapshot.ClaimantID, ws.ScopeClaimProgress, nil, claimSnapshot.ID)
+	var item models.Item
+	if err := database.DB.Select("id, publisher_id").First(&item, claimSnapshot.ItemID).Error; err == nil {
+		_ = ws.PushUpdate(item.PublisherID, ws.ScopeActivity, nil, item.ID)
+	}
+
+	return nil
 }
 
 // ItemStats 统计数据结构

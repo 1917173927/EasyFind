@@ -2,6 +2,7 @@ package services
 
 import (
 	"easyfind/internal/models"
+	"easyfind/internal/ws"
 	"easyfind/pkg/database"
 	"easyfind/pkg/utils"
 	"errors"
@@ -166,7 +167,13 @@ func (s *SuperAdminService) CreateAnnouncement(title, content, pType, region, pu
 		IsTop:     isTop,
 		Status:    status,
 	}
-	return database.DB.Create(&announce).Error
+	if err := database.DB.Create(&announce).Error; err != nil {
+		return err
+	}
+	if status == "published" {
+		ws.BroadcastUpdate(ws.ScopeAnnouncement, announce.ID)
+	}
+	return nil
 }
 
 func (s *SuperAdminService) GetAnnouncements(pType, status, region string, page, size int) ([]models.Announcement, int64, error) {
@@ -200,6 +207,9 @@ func (s *SuperAdminService) UpdateAnnouncementStatus(id uint, status string) err
 	}
 	if res.RowsAffected == 0 {
 		return errors.New("公告不存在")
+	}
+	if status == "published" {
+		ws.BroadcastUpdate(ws.ScopeAnnouncement, id)
 	}
 	return nil
 }

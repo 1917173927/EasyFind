@@ -46,6 +46,31 @@ func (cm *ConnectionManager) Delete(userID uint) {
 	delete(cm.connections, userID)
 }
 
+func (cm *ConnectionManager) Disconnect(userID uint) {
+	cm.mu.Lock()
+	client, ok := cm.connections[userID]
+	if ok {
+		delete(cm.connections, userID)
+	}
+	cm.mu.Unlock()
+
+	if ok {
+		client.writeMu.Lock()
+		_ = client.conn.Close()
+		client.writeMu.Unlock()
+	}
+}
+
+func (cm *ConnectionManager) UserIDs() []uint {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	ids := make([]uint, 0, len(cm.connections))
+	for id := range cm.connections {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 // SafeWriteJSON 线程安全写入
 func (cm *ConnectionManager) SafeWriteJSON(userID uint, data interface{}) error {
 	client, ok := cm.Load(userID)
@@ -65,6 +90,12 @@ func (cm *ConnectionManager) SafeWriteJSON(userID uint, data interface{}) error 
 
 	return nil
 
+}
+
+func (cm *ConnectionManager) BroadcastJSON(data interface{}) {
+	for _, userID := range cm.UserIDs() {
+		_ = cm.SafeWriteJSON(userID, data)
+	}
 }
 
 // Manager 全局单例

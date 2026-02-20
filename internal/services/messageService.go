@@ -34,6 +34,10 @@ func SendMessage(senderID, receiverID uint, content string, msgType int, itemID 
 			zap.Error(err))
 	}
 
+	var unreadCount int64
+	database.DB.Model(&models.Message{}).Where("receiver_id = ? AND is_read = ?", receiverID, false).Count(&unreadCount)
+	_ = ws.PushUpdate(receiverID, ws.ScopeDialog, &unreadCount, msg.ID)
+
 	return nil
 }
 
@@ -70,9 +74,18 @@ func GetHistoryMessages(userID, targetID uint, cursor uint, limit int) ([]models
 
 // MarkMessagesAsRead 标记消息为已读
 func MarkMessagesAsRead(userID, targetID uint) error {
-	return database.DB.Model(&models.Message{}).
+	err := database.DB.Model(&models.Message{}).
 		Where("sender_id = ? AND receiver_id = ? AND is_read = ?", targetID, userID, false).
 		Update("is_read", true).Error
+	if err != nil {
+		return err
+	}
+
+	var unreadCount int64
+	database.DB.Model(&models.Message{}).Where("receiver_id = ? AND is_read = ?", userID, false).Count(&unreadCount)
+	_ = ws.PushUpdate(userID, ws.ScopeDialog, &unreadCount, 0)
+
+	return nil
 }
 
 // GetChatList 获取会话列表

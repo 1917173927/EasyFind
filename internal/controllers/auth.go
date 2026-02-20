@@ -4,6 +4,7 @@ import (
 	"easyfind/internal/apiErr"
 	"easyfind/internal/models"
 	"easyfind/internal/services"
+	"easyfind/internal/ws"
 	"easyfind/pkg/response"
 	"errors"
 
@@ -152,8 +153,10 @@ func UpdatePassword(c *gin.Context) {
 // @Success 200 {object} response.Response "退出成功"
 // @Router /api/v1/logout [post]
 func Logout(c *gin.Context) {
-	// JWT 是无状态的，服务端默认不存储 Token 状态。
-	// 真正的注销需要客户端丢弃 Token，或者服务端维护一个 Token 黑名单 (Redis)。
-	// 这里目前仅返回成功响应，提示前端清除 Token。
+	if uid, exists := c.Get("userID"); exists {
+		if userID, ok := uid.(uint); ok {
+			ws.Manager.Disconnect(userID)
+		}
+	}
 	response.Success(c, nil)
 }
