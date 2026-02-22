@@ -4,7 +4,6 @@ import (
 	"easyfind/internal/models"
 	"easyfind/internal/ws"
 	"easyfind/pkg/database"
-	"sort"
 
 	"go.uber.org/zap"
 )
@@ -33,10 +32,6 @@ func SendMessage(senderID, receiverID uint, content string, msgType int, itemID 
 			zap.Uint("receiver_id", receiverID),
 			zap.Error(err))
 	}
-
-	var unreadCount int64
-	database.DB.Model(&models.Message{}).Where("receiver_id = ? AND is_read = ?", receiverID, false).Count(&unreadCount)
-	_ = ws.PushUpdate(receiverID, ws.ScopeDialog, &unreadCount, msg.ID)
 
 	return nil
 }
@@ -74,39 +69,47 @@ func GetHistoryMessages(userID, targetID uint, cursor uint, limit int) ([]models
 
 // MarkMessagesAsRead 标记消息为已读
 func MarkMessagesAsRead(userID, targetID uint) error {
-	err := database.DB.Model(&models.Message{}).
+	return database.DB.Model(&models.Message{}).
 		Where("sender_id = ? AND receiver_id = ? AND is_read = ?", targetID, userID, false).
 		Update("is_read", true).Error
-	if err != nil {
-		return err
-	}
-
-	var unreadCount int64
-	database.DB.Model(&models.Message{}).Where("receiver_id = ? AND is_read = ?", userID, false).Count(&unreadCount)
-	_ = ws.PushUpdate(userID, ws.ScopeDialog, &unreadCount, 0)
-
-	return nil
 }
 
 // GetChatList 获取会话列表
 func GetChatList(userID uint) ([]models.ChatList, error) {
-	var targetIDs []uint
+	type ChatMsgResult struct {
+		models.Message
+		TargetID uint `gorm:"column:target_id"`
+	}
+
+	var chatMsgs []ChatMsgResult
 
 	err := database.DB.Raw(`
-		SELECT DISTINCT target_id FROM (
-			SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS target_id, created_at
+		SELECT * FROM (
+			SELECT *,
+				CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS target_id,
+				ROW_NUMBER() OVER (
+					PARTITION BY (CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END) 
+					ORDER BY created_at DESC
+				) as rn
 			FROM messages 
 			WHERE (sender_id = ? OR receiver_id = ?) AND deleted_at IS NULL
-			ORDER BY created_at DESC
-			LIMIT 200 
-		) AS t LIMIT 50`, userID, userID, userID).Scan(&targetIDs).Error
+		) as t
+		WHERE rn = 1
+		ORDER BY created_at DESC
+		LIMIT 50
+	`, userID, userID, userID, userID).Scan(&chatMsgs).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(targetIDs) == 0 {
+	if len(chatMsgs) == 0 {
 		return []models.ChatList{}, nil
+	}
+
+	var targetIDs []uint
+	for _, msg := range chatMsgs {
+		targetIDs = append(targetIDs, msg.TargetID)
 	}
 
 	var users []models.Account
@@ -135,8 +138,8 @@ func GetChatList(userID uint) ([]models.ChatList, error) {
 	}
 
 	var results []models.ChatList
-	for _, targetID := range targetIDs {
-		targetUser, exists := userMap[targetID]
+	for _, msg := range chatMsgs {
+		targetUser, exists := userMap[msg.TargetID]
 		if !exists {
 			continue
 		}
@@ -145,37 +148,23 @@ func GetChatList(userID uint) ([]models.ChatList, error) {
 			TargetID:    targetUser.ID,
 			TargetName:  targetUser.Username,
 			Avatar:      targetUser.Avatar,
-			UnreadCount: unreadMap[targetID],
+			LastTime:    msg.CreatedAt,
+			UnreadCount: unreadMap[msg.TargetID],
 		}
 
-		var lastMsg models.Message
-
-		err := database.DB.Where(
-			"(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
-			userID, targetID, targetID, userID,
-		).Order("created_at desc").First(&lastMsg).Error
-
-		if err == nil {
-			item.LastTime = lastMsg.CreatedAt
-			if lastMsg.Type == 2 {
-				item.LastMsg = "[图片]"
+		if msg.Type == 2 {
+			item.LastMsg = "[图片]"
+		} else {
+			runes := []rune(msg.Content)
+			if len(runes) > 30 {
+				item.LastMsg = string(runes[:30]) + "..."
 			} else {
-				// 简单的截断逻辑
-				runes := []rune(lastMsg.Content)
-				if len(runes) > 30 {
-					item.LastMsg = string(runes[:30]) + "..."
-				} else {
-					item.LastMsg = lastMsg.Content
-				}
+				item.LastMsg = msg.Content
 			}
 		}
 
 		results = append(results, item)
 	}
-
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].LastTime.After(results[j].LastTime)
-	})
 
 	return results, nil
 }
