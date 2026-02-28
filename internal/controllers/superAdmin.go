@@ -253,6 +253,40 @@ func CreateAnnouncement(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// GetPublicAnnouncements godoc
+// @Summary 用户获取公告列表
+// @Description 无鉴权获取已发布公告列表 (仅 published)
+// @Tags Announcement (Public)
+// @Accept json
+// @Produce json
+// @Param type query string false "类型 (global/region)"
+// @Param region query string false "区域"
+// @Param page_num query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} response.Response{data=map[string]interface{}} "获取成功"
+// @Router /api/v1/announcements [get]
+func GetPublicAnnouncements(c *gin.Context) {
+	pageNum, _ := strconv.Atoi(c.DefaultQuery("page_num", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	pType := c.Query("type")
+	region := c.Query("region")
+
+	if pageNum <= 0 {
+		pageNum = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	list, total, err := services.SuperAdminServiceApp.GetAnnouncements(pType, "published", region, pageNum, pageSize)
+	if err != nil {
+		apiErr.HandleSysError(c, response.ErrDBQueryFail, err)
+		return
+	}
+
+	response.Success(c, gin.H{"list": list, "total": total})
+}
+
 // GetAnnouncementsByAdmin godoc
 // @Summary 获取公告列表
 // @Description 获取系统公告列表 (支持筛选)

@@ -11,12 +11,12 @@ import (
 )
 
 type CreatClaimRequest struct {
-	ItemID uint   `json:"item_id" binding:"required"`
-	Proof  string `json:"proof"`
-	Img1   string `json:"img1"`
-	Img2   string `json:"img2"`
-	Img3   string `json:"img3"`
-	Img4   string `json:"img4"`
+	ItemID uint   `json:"item_id" form:"item_id" binding:"required"`
+	Proof  string `json:"proof" form:"proof"`
+	Img1   string `json:"img1" form:"img1"`
+	Img2   string `json:"img2" form:"img2"`
+	Img3   string `json:"img3" form:"img3"`
+	Img4   string `json:"img4" form:"img4"`
 }
 
 // CreatClaim godoc
@@ -24,13 +24,14 @@ type CreatClaimRequest struct {
 // @Description 用户申请认领物品
 // @Tags Claim (User)
 // @Accept json
+// @Accept mpfd
 // @Produce json
 // @Param request body CreatClaimRequest true "申请信息"
 // @Success 200 {object} response.Response "申请成功"
 // @Router /api/v1/claims [post]
 func CreatClaim(c *gin.Context) {
 	var req CreatClaimRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		apiErr.HandleValidatorError(c, err)
 		return
 	}
@@ -140,13 +141,21 @@ func GetClaimByID(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("userID")
-	if claim.ClaimantID != userID.(uint) {
-		item, _ := services.GetRecordById(claim.ItemID)
-		if item.PublisherID != userID.(uint) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		apiErr.HandleBizError(c, response.ErrTokenInvalid, "未获取到用户信息")
+		return
+	}
+	userID := userIDValue.(uint)
+
+	if claim.ClaimantID != userID {
+		if claim.Item.PublisherID != userID {
 			apiErr.HandleBizError(c, response.ErrNoPerMission, "无权查看此记录")
 			return
 		}
+		claim.PeerUserID = claim.ClaimantID
+	} else {
+		claim.PeerUserID = claim.Item.PublisherID
 	}
 
 	response.Success(c, claim)
@@ -154,7 +163,7 @@ func GetClaimByID(c *gin.Context) {
 
 // ConfirmClaim godoc
 // @Summary 确认认领
-// @Description 确认认领，将物品状态标记为已找到 (仅发布者可用)
+// @Description 确认认领，将物品状态标记为已找到
 // @Tags Claim (User)
 // @Accept json
 // @Produce json
@@ -175,15 +184,8 @@ func ConfirmClaim(c *gin.Context) {
 		return
 	}
 
-	item, err := services.GetRecordById(claim.ItemID)
-	if err != nil {
+	if _, err := services.GetRecordById(claim.ItemID); err != nil {
 		apiErr.HandleBizError(c, response.ErrItemNotFound, "关联物品不存在")
-		return
-	}
-
-	userID, _ := c.Get("userID")
-	if item.PublisherID != userID.(uint) {
-		apiErr.HandleBizError(c, response.ErrNoPerMission, "只有发布者可以确认认领")
 		return
 	}
 

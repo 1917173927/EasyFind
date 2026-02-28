@@ -43,7 +43,7 @@ func (s *AuthService) Login(username, password string, role int) (string, error)
 
 	now := time.Now()
 	if err := database.DB.Model(&models.Account{}).Where("id = ?", account.ID).
-		Updates(map[string]interface{}{"last_login_at": now, "first_login": false}).Error; err != nil {
+		Update("last_login_at", now).Error; err != nil {
 		return "", err
 	}
 
@@ -98,8 +98,11 @@ func (s *AuthService) UpdatePassword(userID uint, oldPassword, newPassword strin
 		return errors.New("密码加密失败")
 	}
 
-	// 更新密码
-	if err := database.DB.Model(&account).Update("password", hashedPassword).Error; err != nil {
+	// 更新密码，并在首次关键动作后关闭首次登录标记
+	if err := database.DB.Model(&account).Updates(map[string]interface{}{
+		"password":    hashedPassword,
+		"first_login": false,
+	}).Error; err != nil {
 		return err
 	}
 

@@ -30,7 +30,7 @@ type GetRecordByAdminRequest struct {
 // @Produce json
 // @Param campus query string false "校区"
 // @Param category query string false "分类"
-// @Param lost_or_found query int false "物品类型 (1:Lost, 2:Found)"
+// @Param lost_or_found query int false "物品类型 (1:Lost, 2:Found, 0或不传=全部)"
 // @Param status query string false "状态"
 // @Param page_num query int false "页码"
 // @Param page_size query int false "每页数量"

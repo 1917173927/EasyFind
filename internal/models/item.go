@@ -53,17 +53,18 @@ type Item struct {
 
 type Claim struct {
 	gorm.Model
-	ItemID     uint    `gorm:"not null" json:"item_id"`
-	Item       Item    `gorm:"foreignKey:ItemID" json:"item"`
-	ClaimantID uint    `gorm:"not null" json:"claimant_id"`
-	Claimant   Account `gorm:"foreignKey:ClaimantID" json:"claimant"`
-	Status     string  `gorm:"default:'pending'" json:"status"` // 状态: pending/approved/rejected/archived
-	Proof      string  `json:"proof"`                           // 证明材料 (文字描述或主要图片)
-	Img1       string  `json:"img1"`                            // 证明图片1
-	Img2       string  `json:"img2"`                            // 证明图片2
-	Img3       string  `json:"img3"`                            // 证明图片3
-	Img4       string  `json:"img4"`                            // 证明图片4
-	RejectReason string `json:"reject_reason"`                  // 认领驳回原因
+	ItemID       uint    `gorm:"not null" json:"item_id"`
+	Item         Item    `gorm:"foreignKey:ItemID" json:"item"`
+	PeerUserID   uint    `gorm:"-" json:"peer_user_id"`
+	ClaimantID   uint    `gorm:"not null" json:"claimant_id"`
+	Claimant     Account `gorm:"foreignKey:ClaimantID" json:"claimant"`
+	Status       string  `gorm:"default:'pending'" json:"status"` // 状态: pending/approved/rejected/archived
+	Proof        string  `json:"proof"`                           // 证明材料 (文字描述或主要图片)
+	Img1         string  `json:"img1"`                            // 证明图片1
+	Img2         string  `json:"img2"`                            // 证明图片2
+	Img3         string  `json:"img3"`                            // 证明图片3
+	Img4         string  `json:"img4"`                            // 证明图片4
+	RejectReason string  `json:"reject_reason"`                   // 认领驳回原因
 }
 
 type LostCategory struct {

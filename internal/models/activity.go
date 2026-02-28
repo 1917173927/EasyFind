@@ -8,6 +8,7 @@ type PostActivity struct {
 	Title        string    `json:"title"`                   // 标题
 	Time         time.Time `json:"time"`                    // 发生时间
 	ItemID       uint      `json:"item_id"`                 // 物品ID
+	PeerUserID   uint      `json:"peer_user_id"`            // 对方用户ID（无对方时为0）
 	ItemName     string    `json:"item_name"`               // 物品名称 (Title)
 	LossTime     time.Time `json:"loss_time"`               // 物品关联的时间(丢失/拾取时间)
 	Location     string    `json:"location"`                // 地点

@@ -21,15 +21,16 @@ func GetPostActivities(userID uint, page, size int) ([]models.PostActivity, int6
 		// 类型1: 状态更新 (Approved, Pending, Matched, Claimed)
 		if item.Status != models.StatusRejected {
 			act := models.PostActivity{
-				Type:     "status_update",
-				Title:    "你的帖子状态已更新",
-				Time:     item.UpdatedAt, // 使用最后更新时间
-				ItemID:   item.ID,
-				ItemName: item.Title,
-				LossTime: item.Time,
-				Location: item.Location,
-				Img:      item.Img1,
-				Status:   string(item.Status),
+				Type:       "status_update",
+				Title:      "你的帖子状态已更新",
+				Time:       item.UpdatedAt, // 使用最后更新时间
+				ItemID:     item.ID,
+				PeerUserID: 0,
+				ItemName:   item.Title,
+				LossTime:   item.Time,
+				Location:   item.Location,
+				Img:        item.Img1,
+				Status:     string(item.Status),
 			}
 			totalActivities = append(totalActivities, act)
 		}
@@ -41,6 +42,7 @@ func GetPostActivities(userID uint, page, size int) ([]models.PostActivity, int6
 				Title:        "你的帖子被驳回!",
 				Time:         item.UpdatedAt,
 				ItemID:       item.ID,
+				PeerUserID:   0,
 				ItemName:     item.Title,
 				LossTime:     item.Time,
 				Location:     item.Location,
@@ -73,6 +75,7 @@ func GetPostActivities(userID uint, page, size int) ([]models.PostActivity, int6
 				Title:        "你的帖子有人认领",
 				Time:         claim.CreatedAt, // 认领创建时间
 				ItemID:       claim.ItemID,
+				PeerUserID:   claim.ClaimantID,
 				ItemName:     claim.Item.Title,
 				LossTime:     claim.Item.Time,
 				Location:     claim.Item.Location,

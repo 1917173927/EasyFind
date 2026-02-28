@@ -29,6 +29,9 @@ func Init(r *gin.Engine) {
 		api.GET("/items", controllers.GetRecord)      // 获取物品 (区分 Lost/Found)
 		api.GET("/items/:id", controllers.GetRecordById)
 		api.GET("/kinds", controllers.GetCategoryList)
+		api.GET("/announcements", controllers.GetPublicAnnouncements)
+		api.GET("/super/announcements", controllers.GetPublicAnnouncements) // 兼容旧路径，公开获取已发布公告
+		api.PUT("/claims/:id/confirm", controllers.ConfirmClaim)
 
 		// 需要认证的通用接口 (User)
 		auth := api.Group("")
@@ -74,7 +77,6 @@ func Init(r *gin.Engine) {
 			auth.GET("/claims/progress", controllers.GetClaimProgress)
 			auth.GET("/claims/:id/reason", controllers.GetClaimRejectReason)
 			auth.GET("/claims/:id", controllers.GetClaimByID)
-			auth.PUT("/claims/:id/confirm", controllers.ConfirmClaim)
 
 			// 帖子动态
 			auth.GET("/activities", controllers.GetPostActivities)
@@ -131,7 +133,6 @@ func Init(r *gin.Engine) {
 			super.DELETE("/categories/:id", controllers.DeleteCategory)
 
 			// 公告管理
-			super.GET("/announcements", controllers.GetAnnouncementsByAdmin)
 			super.POST("/announcements", controllers.CreateAnnouncement)
 			super.PUT("/announcements/review", controllers.ReviewAnnouncement)
 			super.DELETE("/announcements/:id", controllers.DeleteAnnouncement)

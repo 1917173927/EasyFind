@@ -46,6 +46,8 @@ func (s *UserService) UpdateUserProfile(id uint, name, nickname, phone, avatar s
 		return nil // 无需更新
 	}
 
+	updates["first_login"] = false
+
 	return database.DB.Model(&models.Account{}).Where("id = ?", id).Updates(updates).Error
 }
 

@@ -385,7 +385,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "物品类型 (1:Lost, 2:Found)",
+                        "description": "物品类型 (1:Lost, 2:Found, 0或不传=全部)",
                         "name": "lost_or_found",
                         "in": "query"
                     },
@@ -605,7 +605,8 @@ const docTemplate = `{
             "post": {
                 "description": "用户申请认领物品",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -1833,7 +1834,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "角色 (1:用户, 2:管理员)",
+                        "description": "角色 (1:学生/老师, 2:管理员, 3:超级管理员)",
                         "name": "role",
                         "in": "query"
                     },

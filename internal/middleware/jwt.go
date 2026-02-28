@@ -13,21 +13,27 @@ import (
 func JWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "Authorization header is required"})
-			c.Abort()
-			return
-		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "Authorization header format must be Bearer {token}"})
-			c.Abort()
-			return
+		token := ""
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if !(len(parts) == 2 && parts[0] == "Bearer") {
+				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "Authorization header format must be Bearer {token}"})
+				c.Abort()
+				return
+			}
+			token = parts[1]
+		} else {
+			token = strings.TrimSpace(c.Query("token"))
+			if token == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "Authorization header or token query is required"})
+				c.Abort()
+				return
+			}
 		}
 
 		// 验证 Token 逻辑
-		claims, err := utils.ParseToken(parts[1])
+		claims, err := utils.ParseToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "Invalid token"})
 			c.Abort()

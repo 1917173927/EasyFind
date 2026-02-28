@@ -118,7 +118,9 @@ func GetRecordByAdmin(campus, category string, lostOrFound int, status string, p
 		query = query.Where("category = ?", category)
 	}
 
-	query = query.Where("type = ?", getTargetType(lostOrFound))
+	if lostOrFound > 0 {
+		query = query.Where("type = ?", getTargetType(lostOrFound))
+	}
 
 	if status != "" && strings.ToLower(status) != "all" {
 		query = query.Where("status = ?", status)
@@ -143,7 +145,9 @@ func GetTotalPageNumByAdmin(campus, category string, lostOrFound int, status str
 		query = query.Where("category = ?", category)
 	}
 
-	query = query.Where("type = ?", getTargetType(lostOrFound))
+	if lostOrFound > 0 {
+		query = query.Where("type = ?", getTargetType(lostOrFound))
+	}
 
 	if status != "" && strings.ToLower(status) != "all" {
 		query = query.Where("status = ?", status)
@@ -357,6 +361,10 @@ func ArchiveRecord(id uint, processMethod string) error {
 }
 
 func CreatClaim(claim models.Claim) error {
+	normalizeClaimImageURLs(&claim)
+	populateClaimImagesFromProof(&claim)
+	normalizeClaimImageURLs(&claim)
+
 	var count int64
 	database.DB.Model(&models.Item{}).Where("id = ?", claim.ItemID).Count(&count)
 	if count == 0 {
@@ -391,10 +399,17 @@ func CreatClaim(claim models.Claim) error {
 func GetMyClaim(ClaimantID uint, pageNum, pageSize int) ([]models.Claim, error) {
 	var claims []models.Claim
 	result := database.DB.Where("claimant_id = ?", ClaimantID).
+		Preload("Item", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, publisher_id")
+		}).
 		Limit(pageSize).Offset((pageNum - 1) * pageSize).
 		Order("created_at desc").Find(&claims)
 	if result.Error != nil {
 		return nil, result.Error
+	}
+	for index := range claims {
+		claims[index].PeerUserID = claims[index].Item.PublisherID
+		normalizeClaimImageURLs(&claims[index])
 	}
 	return claims, nil
 }
@@ -474,30 +489,139 @@ func GetClaimProgress(ClaimantID uint, pageNum, pageSize int) ([]models.ClaimPro
 func GetPendingClaimByAdmin(pageNum, pageSize int) ([]models.Claim, error) {
 	var claims []models.Claim
 	result := database.DB.Model(&models.Claim{}).
-		Where("status = ?", "Pending"). // 尝试匹配大写 Pending (GORM 默认值可能是大写)
+		Where("LOWER(status) = ?", strings.ToLower(string(models.StatusPending))).
 		Preload("Item").
+		Preload("Claimant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, nickname, avatar, phone, role, is_active, first_login")
+		}).
 		Limit(pageSize).Offset((pageNum - 1) * pageSize).
-		Order("created_at desc").Find(&claims)
-
-	// 如果查不到大写的，再试试小写的 (兼容性处理)
-	if len(claims) == 0 {
-		database.DB.Model(&models.Claim{}).
-			Where("status = ?", "pending").
-			Preload("Item").
-			Limit(pageSize).Offset((pageNum - 1) * pageSize).
-			Order("created_at desc").Find(&claims)
-	}
+		Order("created_at desc").
+		Find(&claims)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
+	for index := range claims {
+		normalizeClaimImageURLs(&claims[index])
+		populateClaimImagesFromProof(&claims[index])
+		normalizeClaimImageURLs(&claims[index])
+	}
+
 	return claims, nil
+}
+
+func populateClaimImagesFromProof(claim *models.Claim) {
+	if claim == nil {
+		return
+	}
+
+	if claim.Img1 != "" || claim.Img2 != "" || claim.Img3 != "" || claim.Img4 != "" {
+		return
+	}
+
+	proof := strings.TrimSpace(claim.Proof)
+	if proof == "" {
+		return
+	}
+
+	parts := strings.FieldsFunc(proof, func(r rune) bool {
+		switch r {
+		case ',', '，', ';', '；', '\n', '\r', '\t', ' ':
+			return true
+		default:
+			return false
+		}
+	})
+
+	images := make([]string, 0, 4)
+	for _, raw := range parts {
+		candidate := strings.TrimSpace(raw)
+		if candidate == "" {
+			continue
+		}
+		if !isLikelyImageURL(candidate) {
+			continue
+		}
+		images = append(images, candidate)
+		if len(images) == 4 {
+			break
+		}
+	}
+
+	if len(images) == 0 && isLikelyImageURL(proof) {
+		images = append(images, proof)
+	}
+
+	if len(images) > 0 {
+		claim.Img1 = images[0]
+	}
+	if len(images) > 1 {
+		claim.Img2 = images[1]
+	}
+	if len(images) > 2 {
+		claim.Img3 = images[2]
+	}
+	if len(images) > 3 {
+		claim.Img4 = images[3]
+	}
+}
+
+func isLikelyImageURL(value string) bool {
+	text := strings.ToLower(strings.TrimSpace(value))
+	if text == "" {
+		return false
+	}
+
+	if strings.HasPrefix(text, "http://") || strings.HasPrefix(text, "https://") || strings.HasPrefix(text, "/uploads/") {
+		return true
+	}
+
+	return strings.HasSuffix(text, ".jpg") ||
+		strings.HasSuffix(text, ".jpeg") ||
+		strings.HasSuffix(text, ".png") ||
+		strings.HasSuffix(text, ".gif") ||
+		strings.HasSuffix(text, ".webp") ||
+		strings.HasSuffix(text, ".bmp")
+}
+
+func normalizeClaimImageURLs(claim *models.Claim) {
+	if claim == nil {
+		return
+	}
+
+	claim.Img1 = normalizeSingleClaimImageURL(claim.Img1)
+	claim.Img2 = normalizeSingleClaimImageURL(claim.Img2)
+	claim.Img3 = normalizeSingleClaimImageURL(claim.Img3)
+	claim.Img4 = normalizeSingleClaimImageURL(claim.Img4)
+}
+
+func normalizeSingleClaimImageURL(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+
+	lowerValue := strings.ToLower(trimmed)
+	if strings.HasPrefix(lowerValue, "http://") || strings.HasPrefix(lowerValue, "https://") {
+		return trimmed
+	}
+
+	if strings.HasPrefix(trimmed, "./uploads/") {
+		return "/" + strings.TrimPrefix(trimmed, "./")
+	}
+
+	if strings.HasPrefix(trimmed, "uploads/") {
+		return "/" + trimmed
+	}
+
+	return trimmed
 }
 
 func GetPendingClaimTotalPageNumByAdmin() (*int64, error) {
 	var pageNum int64
 	result := database.DB.Model(&models.Claim{}).
-		Where("status = ?", string(models.StatusPending)).
+		Where("LOWER(status) = ?", strings.ToLower(string(models.StatusPending))).
 		Count(&pageNum)
 	if result.Error != nil {
 		return nil, result.Error
@@ -507,10 +631,18 @@ func GetPendingClaimTotalPageNumByAdmin() (*int64, error) {
 
 func GetClaimByID(id uint) (models.Claim, error) {
 	var claim models.Claim
-	result := database.DB.First(&claim, id)
+	result := database.DB.Model(&models.Claim{}).
+		Preload("Item").
+		Preload("Claimant", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, username, name, nickname, avatar, phone, role, is_active, first_login")
+		}).
+		First(&claim, id)
 	if result.Error != nil {
 		return models.Claim{}, result.Error
 	}
+	normalizeClaimImageURLs(&claim)
+	populateClaimImagesFromProof(&claim)
+	normalizeClaimImageURLs(&claim)
 	return claim, nil
 }
 
