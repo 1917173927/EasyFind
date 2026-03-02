@@ -2,7 +2,7 @@
 # 校园失物招领系统 (EasyFind)
 
 ## 项目简介
-这是一个基于 Golang (Gin) + MySQL + Redis 的校园失物招领系统后端。
+这是一个基于 Golang (Gin) + MySQL + Redis 的校园失物招领系统后端。实际项目已部署云服务器这里仅作查看代码用
 
 ## 技术栈
 - Lang: Golang
@@ -12,7 +12,7 @@
 
 ## 快速开始
 1. 配置 `config/config.yaml`。
-2. 运行: `go run cmd/server/main.go`。
+2. 运行: `go run cmd/main.go`。
 
 ## 需求详情
 
