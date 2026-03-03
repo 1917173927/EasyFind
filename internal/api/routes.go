@@ -30,7 +30,6 @@ func Init(r *gin.Engine) {
 		api.GET("/items/:id", controllers.GetRecordById)
 		api.GET("/kinds", controllers.GetCategoryList)
 		api.GET("/announcements", controllers.GetPublicAnnouncements)
-		api.GET("/super/announcements", controllers.GetPublicAnnouncements) // 兼容旧路径，公开获取已发布公告
 		api.PUT("/claims/:id/confirm", controllers.ConfirmClaim)
 
 		// 需要认证的通用接口 (User)
@@ -133,6 +132,7 @@ func Init(r *gin.Engine) {
 			super.DELETE("/categories/:id", controllers.DeleteCategory)
 
 			// 公告管理
+			super.GET("/announcements", controllers.GetAnnouncementsByAdmin)
 			super.POST("/announcements", controllers.CreateAnnouncement)
 			super.PUT("/announcements/review", controllers.ReviewAnnouncement)
 			super.DELETE("/announcements/:id", controllers.DeleteAnnouncement)
